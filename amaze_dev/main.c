@@ -9,9 +9,7 @@
  *
  * Copyright 2004 Michiel Scholten
  */
-#define VERSION "2004-01-12 v0.2.02"
-//#define PROGINFO "[ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]"
-#define PROGINFO "[ 2004-01-12 v0.2.02 | amaze@aquariusoft.org ]"
+#define PROGINFO "Project aMaze [ 2004-01-12 v0.2.03 | amaze@aquariusoft.org ]"
 
 /*** Displaylists ***/
 typedef enum
@@ -22,13 +20,13 @@ typedef enum
 /*** Menu-entries ***/
 typedef enum
 {
-	MNU_NONE, MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_CHEATON, MNU_CHEATOFF
+	MNU_NONE, MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_CHEATON, MNU_CHEATOFF, MNU_CENTER
 } menus;
 
 /*** Switches for output to console ***/
-#define DEBUG_OFF
-#define INFO_OFF
-#define MAZEDEBUG_OFF
+#define DEBUG_ON
+#define INFO_ON
+#define MAZEDEBUG_ON
 
 #define FPS_ON
 #define FOG_ON
@@ -501,7 +499,7 @@ int loadNDrawMaze()
 	}
 
 	/* Load stuff */
-	while (!feof(in)) // <- obsolete
+	//while (!feof(in)) // <- obsolete
 	{
 		status = fscanf(in, " %i %i \n", &rows, &columns);
 		dprint("[maze] Maze has dimensions %i x %i\n", rows, columns);
@@ -1209,7 +1207,8 @@ int main(int argc, char **argv)
 	{
 		if (strcmp(argv[1], "--version") == 0)
 		{
-			printf("aMaze version %s\n", VERSION);
+			//printf("aMaze version %s\n", VERSION);
+			printf(PROGINFO);
 		} else
 		{
 			printf("aMaze\n\nUsage: just run the executable. Everything will be loaded automagically\n\nParams:\n        --version    prints version info\n");
@@ -1226,7 +1225,8 @@ int main(int argc, char **argv)
 	glutInitWindowPosition(0,0);
 	//glutCreateWindow("Project aMaze [ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]");
 	//glutCreateWindow("Project aMaze [ Michiel Scholten | mbscholt@aquariusoft.org ]");
-	glutCreateWindow("Project aMaze [ 2004-01-12 v0.2.02 | amaze@aquariusoft.org ]");
+	//glutCreateWindow("Project aMaze [ 2004-01-12 v0.2.02 | amaze@aquariusoft.org ]");
+	glutCreateWindow(PROGINFO);
 
 
 	/* Background color of the screen - "the sky" */
@@ -1298,6 +1298,7 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("-----------------------", MNU_NONE);
 	glutAddSubMenu("shading", submenu_shading);
 	glutAddSubMenu("ghostmode", submenu_cheating);
+	glutAddMenuEntry("center view to player",MNU_CENTER);
 	glutAddMenuEntry("-----------------------", MNU_NONE);
 	glutAddMenuEntry("quit [q, esc]", MNU_QUIT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
