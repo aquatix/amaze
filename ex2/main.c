@@ -11,12 +11,17 @@
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-21
+ * Version 2003-11-24
  * Michiel Scholten [ mbscholt@cs.vu.nl | 1204467 ]
  */
 
 #define F16_MODEL 1
-#define NODEBUG
+/* Menu-entries */
+#define MNU_QUIT 4
+#define MNU_SMOOTH 5
+#define MNU_FLAT 6
+
+#define DEBUG
 #define INFO
 
 #ifdef DEBUG
@@ -345,7 +350,7 @@ int loadModel(char *filename)
 	iprint("Loading \"%s\" ... \n", filename);
 	if ((in = fopen(filename, "r")) == NULL)
 	{
-		iprint("Unable to open the file [file: %s]\n", *filename);
+		iprint("Unable to open the file [file: %s]\n", filename);
 		return 0;
 	}
 	/* Load stuff */
@@ -476,7 +481,15 @@ void handle_menu(int whichone)
 		case 3: /* item 3 */
 			printf("menu :: entry 3\n");
 			break;
-		case 4:
+		case MNU_FLAT:
+			dprint("doing flat shading\n");
+			glShadeModel(GL_FLAT);
+			break;
+		case MNU_SMOOTH:
+			dprint("doing smooth shading\n");
+			glShadeModel(GL_SMOOTH);
+			break;
+		case MNU_QUIT:
 			printf("menu :: quit entry chosen, exiting\n");
 			exit(0);
 			break;
@@ -489,7 +502,7 @@ int main(int argc, char **argv)
 {
 	char f16_files[8][40]= {"../models/f-16/afterburner.sgf", "../models/f-16/body.sgf", "../models/f-16/bomb.sgf", "../models/f-16/cockpit.sgf",
 		"../models/f-16/rockets.sgf", "../models/f-16/tailfin.sgf", "../models/f-16/tailwings.sgf", "../models/f-16/wings.sgf"};
-	int i;
+	int i, submenu;
 			
 	/* initialize glut and the window */
 	glutInit(&argc, argv);
@@ -517,11 +530,16 @@ int main(int argc, char **argv)
 	glutMouseFunc(mouse);
 
 	/* create menu */
+	submenu = glutCreateMenu(handle_menu);
+	glutAddMenuEntry("Flat",MNU_FLAT);
+	glutAddMenuEntry("Smooth",MNU_SMOOTH);
+	
 	glutCreateMenu(handle_menu);
 	glutAddMenuEntry("entry 1", 1);
 	glutAddMenuEntry("entry 2", 2);
 	glutAddMenuEntry("entry 3", 3);
-	glutAddMenuEntry("quit [q, esc]", 4);
+	glutAddSubMenu("Shading",submenu);
+	glutAddMenuEntry("quit [q, esc]", MNU_QUIT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	/* Load the F16 into a display list | void glNewList(GLuint listID, GLenum mode); */
