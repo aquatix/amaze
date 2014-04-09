@@ -39,18 +39,23 @@ void keyboard(unsigned char key, int x, int y)
 
 void mouse(int btn, int btn_state, int x, int y)
 {
+	if ( btn_state == GLUT_DOWN )
+	{
+		printf("mouse :: x = %i, y = %i", x, y);
+	}
+
 	/* Print the states of the mouse buttons */
 	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_DOWN )
 	{
-		printf("mouse :: left button down\n");
+		printf(" :: left button down\n");
 	}
 	if ( btn == GLUT_MIDDLE_BUTTON && btn_state == GLUT_DOWN )
 	{
-		printf("mouse :: middle button down\n");
+		printf(" :: middle button down\n");
 	}
 	if ( btn == GLUT_RIGHT_BUTTON && btn_state == GLUT_DOWN )
 	{
-		printf("mouse :: right button down\n");
+		printf(" :: right button down\n");
 	}
 }
 
