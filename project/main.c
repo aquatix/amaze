@@ -255,6 +255,23 @@ int calculateNormal(point3 t1, point3 t2, point3 t3, point3 normal)
 }
 
 ////////////////////////////////////// Drawing >
+void drawBase()
+{
+	/* Draw the base of the world */
+}
+
+void drawMaze()
+{
+	/* Draw the maze from the displaylist it was loaded in */
+}
+
+void drawPlayer()
+{
+	/* Draw the player, default is the dino */
+}
+
+
+#if 0
 void drawPyramid()
 {
 	point3 normalVector;
@@ -442,9 +459,11 @@ int drawCube()
 	glEnd();
 	return 1;
 }
+#endif
 
 void display(void)
 {
+#if 0
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -487,6 +506,7 @@ void display(void)
 
 	glFlush();
 	glutSwapBuffers();
+#endif
 }
 
 void reshape_now(GLsizei w, GLsizei h)
