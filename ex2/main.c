@@ -33,7 +33,7 @@ point3 colors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50
 void idle(void)
 {
 	/* Get the cpu loaded for 100% while updating continously :) */
-	glutPostRedisplay();
+//	glutPostRedisplay();
 }
 
 
@@ -48,6 +48,7 @@ void rotate(int value)
 			theta -= 360.0;
 		}
 		glutTimerFunc(30, rotate, 1);
+		glutPostRedisplay();
 	}
 }
 
@@ -82,9 +83,6 @@ void drawPyramid()
 	/* we want a pyramid with a square base, every side a different colour */
 	//glColor3ub(0.0, 175.0, 0.0);
 	/* Draw the square base */
-//	copyPoint3v(pyramid, base, 4);
-//	drawSquare(base, colors);
-
 	glBegin(GL_POLYGON);
 		glColor3fv(colors[0]);
 		glVertex3fv(pyramid[0]);
@@ -93,6 +91,7 @@ void drawPyramid()
 		glVertex3fv(pyramid[3]);
 	glEnd();
 
+	/* Draw the 4 sides */
 	glBegin(GL_POLYGON);
 		glColor3fv(colors[1]);
 		glVertex3fv(pyramid[0]);
@@ -120,48 +119,7 @@ void drawPyramid()
 		glVertex3fv(pyramid[0]);
 		glVertex3fv(pyramid[4]);
 	glEnd();
-
-#if 0
-	/* Draw the sides */
-	copyPoint3(&pyramid[0], &triangle[0]);
-	copyPoint3(&pyramid[1], &triangle[1]);
-	copyPoint3(&pyramid[4], &triangle[2]);
-	drawTriangle(&triangle, &colors);
-	
-	copyPoint3(&pyramid[1], &triangle[0]);
-	copyPoint3(&pyramid[2], &triangle[1]);
-	copyPoint3(&pyramid[4], &triangle[2]);
-	drawTriangle(&triangle, &colors);
-	
-	copyPoint3(&pyramid[2], &triangle[0]);
-	copyPoint3(&pyramid[3], &triangle[1]);
-	copyPoint3(&pyramid[4], &triangle[2]);
-	drawTriangle(&triangle, &colors);
-	
-	copyPoint3(&pyramid[3], &triangle[0]);
-	copyPoint3(&pyramid[0], &triangle[1]);
-	copyPoint3(&pyramid[4], &triangle[2]);
-	drawTriangle(&triangle, &colors);
-#endif	
-	/*
-	glBegin(GL_POLYGON);
-		glVertex3i(-5, -5);
-		glVertex3i(-5,  5);
-		glVertex3i( 5,  5);
-		glVertex3i( 5, -5);
-	glEnd();
-	*/
-	/*
-	glColor3ub( 175.0, 0.0, 0.0 );
-	glPopMatrix();
-	glBegin(GL_POLYGON);
-		glVertex2i(-5, -5);
-		glVertex2i(-5,  5);
-		glVertex2i( 5,  5);
-		glVertex2i( 5, -5);
-	glEnd();
-	glPushMatrix();
-	*/
+	/* Done :) */
 }
 
 int drawCube()
@@ -235,11 +193,6 @@ void display(void)
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-#if 0
-	gluLookAt(-0.6, -0.6, 2.0,	// <- eye
-			0.0, 0.0, 0.0,	// <- center
-			0.0, 1.0, 0.0);	// <- up
-#endif
 	glLoadIdentity();
 	gluLookAt(0.0, 0.0, 20.0,	// <- eye
 			0.0, 0.0, 0.0,	// <- center
@@ -248,7 +201,6 @@ void display(void)
 	//drawSquare();
 
 	glPushMatrix();
-	//drawFrame();
 #if 0
 	glTranslatef(0.0f, 0.0f, 3.0f);
 #endif
@@ -352,19 +304,11 @@ int main(int argc, char **argv)
 
 	glClearColor(0.0, 0.0, 0.5, 1.0);
 
-#if 0
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-/*	glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);*/
-	//glFrustum(-2.0, 2.0, 1.5, -1.5, 1.0, 60.0);  // good enough?
-	//gluPerspective(1.0, 5.0, 5.0, 5.0);
-	glMatrixMode(GL_MODELVIEW);
-#endif
 	glEnable(GL_DEPTH_TEST);
 	
 	/* set various event callback functions */
 	glutReshapeFunc(reshape_now);
-	glutIdleFunc(idle);
+//	glutIdleFunc(idle);
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
