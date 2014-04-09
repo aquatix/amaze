@@ -11,7 +11,7 @@
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-17
+ * Version 2003-11-18
  * Michiel Scholten [ mbscholt@cs.vu.nl ]
  */
 
@@ -21,32 +21,13 @@ double theta;
 /* Define vertex */
 typedef GLfloat point3[3];
 
-/*
- * 1: {{0.0, 1.0, 0.0}, {-1.0, 0.0,  1.0}, { 1.0, 0.0,  1.0}}
- * 2: {{0.0, 1.0, 0.0}, { 1.0, 0.0,  1.0}, { 1.0, 0.0, -1.0}}
- * 3: {{0.0, 1.0, 0.0}, { 1.0, 0.0, -1.0}, {-1.0, 0.0, -1.0}}
- * 4: {{0.0, 1.0, 0.0}, {-1.0, 0.0, -1.0}, {-1.0, 0.0,  1.0}}
- *
- * base: {{-1.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 0.0, -1.0}, {-1.0, 0.0, -1.0}}
- *
- */
-
-/*point3 pyramid[] = {{0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {*/
-/*
-point3 pyr_tr1[] = {{0.0, 1.0, 0.0}, {-1.0, 0.0,  1.0}, { 1.0, 0.0,  1.0}};
-point3 pyr_tr2[] = {{0.0, 1.0, 0.0}, { 1.0, 0.0,  1.0}, { 1.0, 0.0, -1.0}};
-point3 pyr_tr3[] = {{0.0, 1.0, 0.0}, { 1.0, 0.0, -1.0}, {-1.0, 0.0, -1.0}};
-point3 pyr_tr4[] = {{0.0, 1.0, 0.0}, {-1.0, 0.0, -1.0}, {-1.0, 0.0,  1.0}};
-*/
-/*base ???*/
-
 point3 pyramid[5] = {{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.0,-1.0,-1.0},	/* base */
 	{0.0, 1.0, 0.0}};									/* top */
 
 point3 cube[8] = {{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
 	{1.0, 1.0, -1.0}, {-1.0,1.0,-1.0}, {-1.0, -1.0, 1.0},
 	{1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}};
-point3 cubecolors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 0.0, 0.0}, {0.0, 50.0, 0.0}, {0.0, 0.0, 50.0}};
+point3 colors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 0.0, 0.0}, {0.0, 50.0, 0.0}, {0.0, 0.0, 50.0}};
 
 void idle(void)
 {
@@ -141,23 +122,54 @@ void reshape_now(GLsizei w, GLsizei h)
 //	glFlush();
 }
 
-int copyPoint3(point3 src, point3 dest)
+int copyPoint3v(point3 *src, point3 *dest, int number)
 {
-	//
+	int i;
+	for (i=0; i<number; i++)
+	{
+		*dest[i] = *src[i];
+	}
+	return 1;
+}
+
+int copyPoint3(point3 *src, point3 *dest)
+{
+	dest = src;
+	return 1;
 }
 
 void drawPyramid()
 {
 	point3 base[4];
+	point3 triangle[3];
 	/* we want a pyramid with a square base, every side a different colour */
-	glColor3ub( 0.0, 175.0, 0.0);
+	//glColor3ub(0.0, 175.0, 0.0);
 	glPopMatrix();
 	/* Draw the square base */
-	base[0] = {1.0,0.0,1.0}; // pyramid[0];
-	base[1] = pyramid[1];
-	base[2] = pyramid[2];
-	base[3] = pyramid[3];
-	drawSquare(base, color);
+	copyPoint3v(pyramid, base, 4);
+	drawSquare(base, colors);
+
+	/* Draw the sides */
+	copyPoint3(&pyramid[0], &triangle[0]);
+	copyPoint3(&pyramid[1], &triangle[1]);
+	copyPoint3(&pyramid[4], &triangle[2]);
+	drawTriangle(&triangle, &colors);
+	
+	copyPoint3(&pyramid[1], &triangle[0]);
+	copyPoint3(&pyramid[2], &triangle[1]);
+	copyPoint3(&pyramid[4], &triangle[2]);
+	drawTriangle(&triangle, &colors);
+	
+	copyPoint3(&pyramid[2], &triangle[0]);
+	copyPoint3(&pyramid[3], &triangle[1]);
+	copyPoint3(&pyramid[4], &triangle[2]);
+	drawTriangle(&triangle, &colors);
+	
+	copyPoint3(&pyramid[3], &triangle[0]);
+	copyPoint3(&pyramid[0], &triangle[1]);
+	copyPoint3(&pyramid[4], &triangle[2]);
+	drawTriangle(&triangle, &colors);
+	
 	/*
 	glBegin(GL_POLYGON);
 		glVertex3i(-5, -5);
@@ -178,34 +190,45 @@ void drawPyramid()
 	glPushMatrix();
 }
 
-void drawCube()
+int drawCube()
 {
 	point3 vertices[4];
-	vertices[0] = cube[0];
-	vertices[1] = cube[3];
-	vertices[2] = cube[2];
-	vertices[3] = cube[1];
-	point3 color = cubecolors[0]; 
-	drawSquare(cube, color);
+	point3 color;
+
+	copyPoint3(&cube[0], &vertices[0]);
+	copyPoint3(&cube[1], &vertices[3]);
+	copyPoint3(&cube[2], &vertices[2]);
+	copyPoint3(&cube[3], &vertices[1]);
+	copyPoint3(&colors[0], &color); 
+	drawSquare(&cube, &color);
 }
 
-void drawSquare( point3 *vertices, glColor3ub colors )
+int drawSquare(point3 *vertices, point3 colors)
 {
 	/* set the color of the square */
-	glColor3ub( colors );
+	//glColor3ub(colors);
+	glColor3fv(colors);
 	/* now draw the square */
 	glPopMatrix();
 	glBegin(GL_POLYGON);
-	/*
-		glVertex2i(-5, -5);
-		glVertex2i(-5,  5);
-		glVertex2i( 5,  5);
-		glVertex2i( 5, -5);
-	*/
 		glVertex3fv(vertices[0]);
 		glVertex3fv(vertices[1]);
 		glVertex3fv(vertices[2]);
 		glVertex3fv(vertices[3]);
+	glEnd();
+	glPushMatrix();
+}
+
+int drawTriangle(point3 *vertices, point3 colors)
+{
+	/* set the color of the square */
+	glColor3fv(colors);
+	/* now draw the triangle */
+	glPopMatrix();
+	glBegin(GL_POLYGON);
+		glVertex3fv(vertices[0]);
+		glVertex3fv(vertices[1]);
+		glVertex3fv(vertices[2]);
 	glEnd();
 	glPushMatrix();
 }
@@ -232,9 +255,11 @@ void display(void)
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	drawSquare();
+	//drawSquare();
 
-	drawFrame();
+	//drawFrame();
+	drawPyramid();
+	drawCube();
 	glutSwapBuffers();
 	/* convert degrees to radians */
 /*
@@ -254,7 +279,7 @@ int loadModel()
 	/* Load a model from file, in our case the F16 plane
 	 * Check for existence of file, return 0 if error, otherwise 1 [or the number of vertices or something?]
 	 */
-	scanf();
+	//scanf();
 }
 
 int main(int argc, char **argv)
@@ -274,7 +299,7 @@ int main(int argc, char **argv)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 /*	glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);*/
-	glFrustrum(-2.0, 2.0, 1.5, -1.5, 1.0, 60.0);  // good enough?
+	glFrustum(-2.0, 2.0, 1.5, -1.5, 1.0, 60.0);  // good enough?
 	glMatrixMode(GL_MODELVIEW);
 
 	/* set various event callback functions */
