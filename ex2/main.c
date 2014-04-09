@@ -108,6 +108,12 @@ void reshape_now(GLsizei w, GLsizei h)
 	glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);
 	glMatrixMode(GL_MODELVIEW);
 */
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	//glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);
+	//gluPerspective(45.0, (800/600), 2.0, 40.0);
+	gluPerspective(100.0, 1.0, 1.0, 20.0);
+	glMatrixMode(GL_MODELVIEW);
 	/* adjust viewport and draw the picture */
 //	glViewport(0, 0, min(h,w), min(h,w));
 
@@ -255,6 +261,10 @@ void display(void)
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	gluLookAt(-0.6, -0.6, 2.0,	// <- eye
+			0.0, 0.0, 0.0,	// <- center
+			0.0, 1.0, 0.0);	// <- up
+	
 	//drawSquare();
 
 	//drawFrame();
@@ -299,7 +309,8 @@ int main(int argc, char **argv)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 /*	glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);*/
-	glFrustum(-2.0, 2.0, 1.5, -1.5, 1.0, 60.0);  // good enough?
+	//glFrustum(-2.0, 2.0, 1.5, -1.5, 1.0, 60.0);  // good enough?
+	//gluPerspective(1.0, 5.0, 5.0, 5.0);
 	glMatrixMode(GL_MODELVIEW);
 
 	/* set various event callback functions */
