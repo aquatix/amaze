@@ -11,7 +11,7 @@
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-18
+ * Version 2003-11-19
  * Michiel Scholten [ mbscholt@cs.vu.nl ]
  */
 
@@ -28,7 +28,7 @@ point3 pyramid[5] = {{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.
 point3 cube[8] = {{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
 	{1.0, 1.0, -1.0}, {-1.0,1.0,-1.0}, {-1.0, -1.0, 1.0},
 	{1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}};
-point3 colors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 50.0, 0.0}, {0.0, 50.0, 50.0}, {0.0, 0.0, 50.0}};
+point3 colors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 50.0, 0.0}, {0.0, 50.0, 50.0}, {50.0, 0.0, 50.0}};
 
 void idle(void)
 {
@@ -124,6 +124,7 @@ void drawPyramid()
 
 int drawCube()
 {
+#if 0
 	point3 vertices[4];
 	point3 color;
 
@@ -133,6 +134,56 @@ int drawCube()
 	copyPoint3(&cube[3], &vertices[1]);
 	copyPoint3(&colors[0], &color); 
 //	drawSquare(&cube, &color);
+#endif
+
+	glBegin(GL_POLYGON);
+		glColor3fv(colors[0]);
+		glVertex3fv(cube[4]);
+		glVertex3fv(cube[5]);
+		glVertex3fv(cube[1]);
+		glVertex3fv(cube[0]);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+		glColor3fv(colors[1]);
+		glVertex3fv(cube[4]);
+		glVertex3fv(cube[5]);
+		glVertex3fv(cube[6]);
+		glVertex3fv(cube[7]);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+		glColor3fv(colors[2]);
+		glVertex3fv(cube[6]);
+		glVertex3fv(cube[7]);
+		glVertex3fv(cube[3]);
+		glVertex3fv(cube[2]);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+		glColor3fv(colors[3]);
+		glVertex3fv(cube[2]);
+		glVertex3fv(cube[3]);
+		glVertex3fv(cube[0]);
+		glVertex3fv(cube[1]);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+		glColor3fv(colors[4]);
+		glVertex3fv(cube[5]);
+		glVertex3fv(cube[1]);
+		glVertex3fv(cube[2]);
+		glVertex3fv(cube[6]);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+		glColor3fv(colors[5]);
+		glVertex3fv(cube[4]);
+		glVertex3fv(cube[0]);
+		glVertex3fv(cube[3]);
+		glVertex3fv(cube[7]);
+	glEnd();
+
 }
 #if 0
 /*
@@ -204,10 +255,19 @@ void display(void)
 #if 0
 	glTranslatef(0.0f, 0.0f, 3.0f);
 #endif
-		glRotatef(theta, 0, 1, 0);
+		glRotatef(theta, 0.5, 1, 0);
 		drawPyramid();
+
+		glPushMatrix();
+			glTranslatef(0.0f, 0.0f, 3.0f);
+			drawCube();
+		glPopMatrix();
 	glPopMatrix();
-	//drawCube();
+
+	
+
+
+	
 	glFlush();
 	glutSwapBuffers();
 }
