@@ -9,16 +9,16 @@
  *
  * Michiel Scholten [ mbscholt@cs.vu.nl | 1204467 ]
  */
-#define VERSION "2004-01-05 v0.0.03"
+#define VERSION "2004-01-07 v0.0.04"
 #define PROGINFO "[ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]"
 
-/* Displaylists */
+/*** Displaylists ***/
 typedef enum
 {
-	MODEL_PLAYER, MODEL_MAZE
+	MODEL_PLAYER, MODEL_WORLD
 } displaylists;
 
-/* Menu-entries */
+/*** Menu-entries ***/
 typedef enum
 {
 	MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_VER, MNU_HOR, MNU_TEX_FULL, MNU_TEX_COMP,
@@ -26,7 +26,7 @@ typedef enum
 	MNU_BOGUS_1, MNU_BOGUS_2, MNU_BOGUS_3
 } menus;
 
-/* Switches for output to console */
+/*** Switches for output to console ***/
 #define DEBUG
 #define INFO
 
@@ -44,25 +44,37 @@ typedef enum
 #define iprint (void)
 #endif
 
-#define NUMBER_OF_TEXTURES 1
+/*** Texture defining stuff ***/
+#define FILE_PLAYER_BASEDIR "../models/dino/"
+char player_files[][40] = {"arm.sgf", "body.sgf", "eye.sgf", "leg.sgf"};
+#define PLAYER_NR_FILES 4
+
+#define TEXTURES_BASEDIR "../textures/";
+#define TEXT_REPTILE "reptile.rgb"
+#define TEXT_GROUND "brick.rgb"
+#define TEXT_WALL "rock.rgb"
+
+/*** Globally used variables ***/
+/* Counting fps */
+int frame=0,time,timebase=0;
+int font=(int)GLUT_BITMAP_8_BY_13;
+char s[30];
+
+double window_h=0, window_w=0;
 
 #if 0
-char player_files[8][40]= {"../models/f-16/afterburner.sgf", "../models/f-16/body.sgf", "../models/f-16/bomb.sgf", "../models/f-16/cockpit.sgf",
-	"../models/f-16/rockets.sgf", "../models/f-16/tailfin.sgf", "../models/f-16/tailwings.sgf", "../models/f-16/wings.sgf"};
-#endif
-#define FILE_PLAYER_BASEDIR "../models/dino";
-char player_files[][40] = {"arm.sgf", "body.sgf", "eye.sgf", "leg.sgf"};
-
-/* Globally used variables */
 double time;
-int mousedown = 0;
 double theta_pyramid, theta_cube, theta_f16;
-int animate = 0;
+#endif
+int mousedown = 0;
+int animate = 1;
 int texturesEnabled = 1;
 int pyr_x = 1;
 int pyr_y = 0;
 
-RGBImage *pTexture;
+RGBImage *pTexture_reptile;
+RGBImage *pTexture_brick;
+RGBImage *pTexture_rock;
 int textureId;
 double texRowX = 1.0;
 double texRowY = 1.0;
@@ -70,10 +82,10 @@ double rowDivide = 0.0;
 
 float textureMode = GL_MODULATE;	// GL_REPLACE
 
-/* Define vertex */
+/*** Define vertex ***/
 typedef GLfloat point3[3];
 
-/* Struct to define material properties */
+/*** Struct to define material properties ***/
 typedef struct
 {
 	float ambient[4];	/* params parameter in glMaterialfv call */
@@ -83,6 +95,51 @@ typedef struct
 } Material_t;
 
 
+////////////////////////////////////// FPS display >
+void setOrthographicProjection()
+{
+        // switch to projection mode
+        glMatrixMode(GL_PROJECTION);
+        // save previous matrix which contains the 
+        //settings for the perspective projection
+        glPushMatrix();
+        // reset matrix
+        glLoadIdentity();
+        // set a 2D orthographic projection
+        gluOrtho2D(0, window_w, 0, window_h);
+        // invert the y axis, down is positive
+        glScalef(1, -1, 1); 
+        // mover the origin from the bottom left corner
+        // to the upper left corner
+        glTranslatef(0, -window_h, 0); 
+        glMatrixMode(GL_MODELVIEW);
+}
+
+void resetPerspectiveProjection()
+{
+        // set the current matrix to GL_PROJECTION
+        glMatrixMode(GL_PROJECTION);
+        // restore previous settings
+        glPopMatrix();
+        // get back to GL_MODELVIEW matrix
+        glMatrixMode(GL_MODELVIEW);
+}
+
+void renderBitmapString(float x, float y, void *font,char *string)
+{
+  
+  char *c;
+  // set position to start drawing fonts
+  glRasterPos2f(x, y);
+  // loop all the characters in the string
+  for (c=string; *c != '\0'; c++) {
+    glutBitmapCharacter(font, *c);
+  }
+}
+////////////////////////////////////// FPS display <
+
+
+#if 0
 ////////////////////////////////////// Pyramid settings >
 /* Vertices */
 point3 pyramid[5] =
@@ -127,7 +184,7 @@ point3 colors[6] =
 };
 
 point3 specularLight = {.5, .5, .5};
-
+#endif
 ////////////////////////////////////// Lights >
 const float LIGHT0_POS[] =  {2.0f, 4.0f, 2.0f, 1.0f};
 const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
@@ -140,6 +197,7 @@ const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
 const float LIGHT1_SPECULAR[] =  {0.2f, 0.2f, 0.2f, 1.0f};
 ////////////////////////////////////// Lights <
 
+#if 0
 ////////////////////////////////////// Rotating functions >
 void rotatePyramid(int value)
 {
@@ -189,7 +247,7 @@ void rotatePlayer(int value)
 	}
 }
 ////////////////////////////////////// Rotating functions <
-
+#endif
 int calculateNormal(point3 t1, point3 t2, point3 t3, point3 normal)
 {
 	point3 v, v1, v2;
@@ -235,6 +293,16 @@ void drawBase()
 	/* Draw the base of the world */
 
 	/* So, draw a nice square: */
+
+	glColor3f(0.9f, 0.9f, 0.9f);
+	glBegin(GL_QUADS);
+		glVertex3f(-100.0f, 0.0f, -100.0f);
+		glVertex3f(-100.0f, 0.0f,  100.0f);
+		glVertex3f( 100.0f, 0.0f,  100.0f);
+		glVertex3f( 100.0f, 0.0f, -100.0f);
+	glEnd();
+
+	
 #if 0
 	glBegin(GL_POLYGON);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
@@ -253,9 +321,9 @@ void drawBase()
 #endif
 }
 
-void drawMaze()
+void loadNDrawMaze()
 {
-	/* Draw the maze from the displaylist it was loaded in */
+	/* Load the maze datafile and draw it [ -> will be loaded into the world displaylist ] */
 }
 
 void drawPlayer()
@@ -454,8 +522,34 @@ int drawCube()
 }
 #endif
 
-void display(void)
+void renderScene(void)
 {
+	/* Get a nice darkblue as background */
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	/* FPS stuff */
+	frame++;
+	time=glutGet(GLUT_ELAPSED_TIME);
+	if (time - timebase > 1000)
+	{
+		sprintf(s,"FPS:%4.2f",
+		frame*1000.0/(time-timebase));
+		timebase = time;		
+		frame = 0;
+	}
+
+	glColor3f(0.0f,1.0f,1.0f);
+	glPushMatrix();
+	glLoadIdentity();
+	setOrthographicProjection();
+	renderBitmapString(30,35,(void *)font,s);
+	glPopMatrix();
+	resetPerspectiveProjection();
+
+	drawBase();
+	
+	glutSwapBuffers();
+
 #if 0
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -505,6 +599,9 @@ void display(void)
 void reshape_now(GLsizei w, GLsizei h)
 {
 	double whRatio = (double)h / (double)w;
+	window_h = h;
+	window_w = w;
+/*
 	glViewport(0, 0, w, h);
 	dprint("%f\n", whRatio);
 	fflush(stdout);
@@ -512,17 +609,23 @@ void reshape_now(GLsizei w, GLsizei h)
 	glLoadIdentity();
 	glFrustum(-0.3, 0.3, -whRatio * 0.3, whRatio * 0.3, 0.3, 100);
 	glMatrixMode(GL_MODELVIEW);
+*/
 }
 ////////////////////////////////////// Drawing <
 
 ////////////////////////////////////// Loading stuff >
-int loadModel(char *filename)
+int loadModel(char *filename, char *texturefile)
 {
 	int vertex, nrVertices;
 	char identifier[20]; // string of maxlen 20
 	GLfloat vertex_x, vertex_y, vertex_z, normal_x, normal_y, normal_z;
 	int status;
 	
+	/* Texture stuff */
+	if (texturefile != NULL) glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
+	glBindTexture(GL_TEXTURE_2D, textureId);
+
 	FILE *in;
 	iprint("Loading \"%s\" ... \n", filename);
 	if ((in = fopen(filename, "r")) == NULL)
@@ -592,6 +695,7 @@ int loadModel(char *filename)
 			fscanf(in, " %f %f %f %f %f %f\n", &vertex_x, &vertex_y, &vertex_z, &normal_x, &normal_y, &normal_z);
 			glNormal3f(normal_x, normal_y, normal_z);
 			glVertex3f(vertex_x, vertex_y, vertex_z);
+			glTexCoord2f(1.0, 0.0); //random placement of textures
 		}
 		glEnd();	/* Done with this figure */
 	}
@@ -601,7 +705,7 @@ int loadModel(char *filename)
 
 int loadTextures()
 {
-	pTexture = LoadRGB("../textures/text.rgb");
+	pTexture_reptile = LoadRGB("../textures/text.rgb");
 	glGenTextures(NUMBER_OF_TEXTURES, &textureId);
 	glBindTexture(GL_TEXTURE_2D, textureId);
 
@@ -611,10 +715,34 @@ int loadTextures()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	
 	//target, level, components, width, height, border, format, type, *pixels
-	glTexImage2D(GL_TEXTURE_2D, 0, pTexture->components, pTexture->sizeX, pTexture->sizeY, 0,  pTexture->format, GL_UNSIGNED_BYTE, pTexture->data);
+	glTexImage2D(GL_TEXTURE_2D, 0, pTexture->components, pTexture->sizeX, pTexture->sizeY, 0, pTexture->format, GL_UNSIGNED_BYTE, pTexture->data);
 
 	iprint("Texture \"../textures/text.rgb\" loaded\n");
+
 	return 1;
+}
+
+
+int loadPlayer(void)
+{
+	int i;
+	char filename[255];
+	/* Load the player [dino] */
+	for (i = 0; i < PLAYER_NR_FILES; i++)
+	{
+		filename[0]='\0';	//reset the string
+		strcat(filename, FILE_PLAYER_BASEDIR);
+		strcat(filename, player_files[i]);
+		loadModel(filename);
+	}
+}
+
+int loadWorld(void)
+{
+	glNewList(MODEL_WORLD, GL_COMPILE);
+		drawBase();
+		loadNDrawMaze();
+	glEndList();
 }
 ////////////////////////////////////// Loading stuff <
 
@@ -635,8 +763,8 @@ void keyboard(unsigned char key, int x, int y)
 		} else
 		{
 			animate = 1;
-			glutTimerFunc(20, rotateCube, 0);
-			glutTimerFunc(10, rotatePlayer, 0);
+//			glutTimerFunc(20, rotateCube, 0);
+//			glutTimerFunc(10, rotatePlayer, 0);
 		}
 	}
 }
@@ -647,7 +775,7 @@ void mouse(int btn, int btn_state, int x, int y)
 	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_DOWN )
 	{
 		mousedown = 1;
-		glutTimerFunc(30, rotatePyramid, 0);
+//		glutTimerFunc(30, rotatePyramid, 0);
 	}
 	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_UP )
 	{
@@ -739,6 +867,9 @@ void handle_menu(int whichone)
 ////////////////////////////////////// main function and init >
 int main(int argc, char **argv)
 {
+	int i, submenu_shading, submenu_rotation, submenu_textures, submenu_texmode;
+
+	/* If prog was called with param, only print info to console */
 	if (argc > 1)
 	{
 		if (strcmp(argv[1], "--version") == 0)
@@ -746,14 +877,13 @@ int main(int argc, char **argv)
 			printf("aMaze version %s\n", VERSION);
 		} else
 		{
-			printf("aMaze\n\nUsage: start executable. Everything will be loaded automagically\n\nParams:\n        --version    prints version info\n");
+			printf("aMaze\n\nUsage: just run the executable. Everything will be loaded automagically\n\nParams:\n        --version    prints version info\n");
 		}
 		printf("\n%s\n", PROGINFO);
 		return 0;
 	}
-	
-	int i, submenu_shading, submenu_rotation, submenu_textures, submenu_texmode;
-			
+
+
 	/* initialize glut and the window */
 	glutInit(&argc, argv);
 	/* Use rgb, double buffering and hidden surface removal */
@@ -796,9 +926,10 @@ int main(int argc, char **argv)
 	
 	/* set various event callback functions */
 	glutReshapeFunc(reshape_now);
-	glutDisplayFunc(display);
+	glutDisplayFunc(renderScene);
 	glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
+	glutIdleFunc(renderScene);
 
 	/* Load the texture[s] */
 	loadTextures();
@@ -834,14 +965,14 @@ int main(int argc, char **argv)
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 
-	/* Load the player [dino] */
-	for (i = 0; i < PLAYER_NR_FILES; i++)
+	if (loadPlayer() < 1)
 	{
-		//
+		printf("Error while doing loadPlayer!\n");
+		return -1;
 	}
 	
-	/* Load the F16 into a display list | void glNewList(GLuint listID, GLenum mode); */
 #if 0
+	/* Load the F16 into a display list | void glNewList(GLuint listID, GLenum mode); */
 	glNewList(F16_MODEL, GL_COMPILE);
 	for (i = 0; i < 8; i++)
 	{
