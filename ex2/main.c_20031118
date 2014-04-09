@@ -27,12 +27,24 @@ point3 pyramid[5] = {{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.
 point3 cube[8] = {{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
 	{1.0, 1.0, -1.0}, {-1.0,1.0,-1.0}, {-1.0, -1.0, 1.0},
 	{1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}};
-point3 colors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 50.0, 0.0}, {0.0, 50.0, 50.0}, {0.0, 0.0, 50.0}};
+point3 colors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 0.0, 0.0}, {0.0, 50.0, 0.0}, {0.0, 0.0, 50.0}};
 
 void idle(void)
 {
 	/* Get the cpu loaded for 100% while updating continously :) */
-	glutPostRedisplay();
+
+	/* use the VU-made function */
+	//double t = Wallclock();
+	double t = time + 0.02;
+	/* update only every 1/100th of a second */
+	if ( t < time + 0.01) return;
+	time = t;
+	theta += 2;
+	if ( theta >= 360.0 )
+	{
+		theta -= 360.0;
+	}
+	//glutPostRedisplay();
 }
 
 void keyboard(unsigned char key, int x, int y)
@@ -90,11 +102,21 @@ void handle_menu(int whichone)
 void reshape_now(GLsizei w, GLsizei h)
 {
 	/* adjust clipping box */
+/*
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, w/h, 2.0, 40.0);
+	glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);
+	glMatrixMode(GL_MODELVIEW);
+*/
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	//glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);
+	//gluPerspective(45.0, (800/600), 2.0, 40.0);
+	//gluPerspective(100.0, 1.0, 1.0, 20.0);
+	gluPerspective(100.0, 1.0, 1.0, 20.0);
 	glMatrixMode(GL_MODELVIEW);
 	/* adjust viewport and draw the picture */
+//	glViewport(0, 0, min(h,w), min(h,w));
 
 	if (h < w)
 	{
@@ -103,16 +125,8 @@ void reshape_now(GLsizei w, GLsizei h)
 	{
 		glViewport( 0, h / 2 - w / 2, w, w);
 	}
-}
-
-void rotate()
-{
-	/* Every 30msec */
-	theta += 10.8;
-	if ( theta >= 360.0 )
-	{
-		theta -= 360.0;
-	}
+	glLoadIdentity();
+//	glFlush();
 }
 
 int copyPoint3v(point3 *src, point3 *dest, int number)
@@ -146,45 +160,8 @@ void drawPyramid()
 	/* we want a pyramid with a square base, every side a different colour */
 	//glColor3ub(0.0, 175.0, 0.0);
 	/* Draw the square base */
-//	copyPoint3v(pyramid, base, 4);
-//	drawSquare(base, colors);
-
-	glBegin(GL_POLYGON);
-		glColor3fv(colors[0]);
-		glVertex3fv(pyramid[0]);
-		glVertex3fv(pyramid[1]);
-		glVertex3fv(pyramid[2]);
-		glVertex3fv(pyramid[3]);
-	glEnd();
-
-	glBegin(GL_POLYGON);
-		glColor3fv(colors[1]);
-		glVertex3fv(pyramid[0]);
-		glVertex3fv(pyramid[1]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	glBegin(GL_POLYGON);
-		glColor3fv(colors[2]);
-		glVertex3fv(pyramid[1]);
-		glVertex3fv(pyramid[2]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	glBegin(GL_POLYGON);
-		glColor3fv(colors[3]);
-		glVertex3fv(pyramid[2]);
-		glVertex3fv(pyramid[3]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	glBegin(GL_POLYGON);
-		glColor3fv(colors[4]);
-		glVertex3fv(pyramid[3]);
-		glVertex3fv(pyramid[0]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
+	copyPoint3v(pyramid, base, 4);
+	drawSquare(base, colors);
 #if 0
 	/* Draw the sides */
 	copyPoint3(&pyramid[0], &triangle[0]);
@@ -238,19 +215,15 @@ int drawCube()
 	copyPoint3(&cube[2], &vertices[2]);
 	copyPoint3(&cube[3], &vertices[1]);
 	copyPoint3(&colors[0], &color); 
-//	drawSquare(&cube, &color);
+	drawSquare(&cube, &color);
 }
-#if 0
-/*
+
 int drawSquare(point3 *vertices, point3 colors)
-*/
-int drawSquare(int a, int b, int c, int d)
 {
 	/* set the color of the square */
 	//glColor3ub(colors);
 	glColor3fv(colors);
 	/* now draw the square */
-/*
 printf("square\n");
 printf("vertex 0: %i\n", vertices[0]);
 printf("vertex 1: %i\n", vertices[1]);
@@ -262,16 +235,8 @@ printf("vertex 3: %i\n", vertices[3]);
 		glVertex3fv(vertices[2]);
 		glVertex3fv(vertices[3]);
 	glEnd();
-*/
-
-	glBegin(GL_QUADS);
-		;
-		glVertex3fv(vertices[1]);
-		glVertex3fv(vertices[2]);
-		glVertex3fv(vertices[3]);
-	glEnd();
 }
-#endif
+
 int drawTriangle(point3 *vertices, point3 colors)
 {
 	/* set the color of the square */
@@ -293,34 +258,46 @@ int drawTriangle(point3 *vertices, point3 colors)
 	glEnd();
 }
 
+#if 0
+void drawFrame()
+{
+	glRotatef( theta, 0.0, 0.0, 1.0 );
+
+	/* blue wireframe rotating square */
+	glColor3ub( 0.0, 0.0, 255.0 );
+	//glPopMatrix();
+	glBegin(GL_LINE_LOOP);
+	//glBegin(GL_POLYGON);
+		glVertex2i(-5, -5);
+		glVertex2i(-5,  5);
+		glVertex2i( 5,  5);
+		glVertex2i( 5, -5);
+	glEnd();
+}
+#endif
+
 void display(void)
 {
-//	double thetar;
+	double thetar;
 	/* Get a nice darkblue as background */
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 #if 0
 	gluLookAt(-0.6, -0.6, 2.0,	// <- eye
 			0.0, 0.0, 0.0,	// <- center
 			0.0, 1.0, 0.0);	// <- up
 #endif
-	glLoadIdentity();
-	gluLookAt(0.0, 0.0, 20.0,	// <- eye
+	gluLookAt(0.0, 0.0, 5.0,	// <- eye
 			0.0, 0.0, 0.0,	// <- center
 			0.0, 1.0, 0.0);	// <- up
 	
 	//drawSquare();
 
-	glPushMatrix();
 	//drawFrame();
-#if 0
+	
 	glTranslatef(0.0f, 0.0f, 3.0f);
-#endif
-		glRotatef(theta, 0, 1, 0);
-		drawPyramid();
-	glPopMatrix();
+	drawPyramid();
 	//drawCube();
-	glFlush();
 	glutSwapBuffers();
 	/* convert degrees to radians */
 /*
@@ -332,6 +309,7 @@ void display(void)
 	glEnd();
 */
 
+	glFlush();
 }
 
 int loadModel()
@@ -350,23 +328,19 @@ int main(int argc, char **argv)
 	glutInit(&argc, argv);
 	/* Use rgb, double buffering and hidden surface removal */
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-//	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	glutInitWindowSize(800,600);
 	glutInitWindowPosition(0,0);
-	glutCreateWindow("Exercise 2 [Solar system | mbscholt@cs.vu.nl | 1204467]");
+	glutCreateWindow("Exercise 2 - solar system [mbscholt@cs.vu.nl 1204467]");
 
 	glClearColor(0.0, 0.0, 0.5, 1.0);
 
-#if 0
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 /*	glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);*/
 	//glFrustum(-2.0, 2.0, 1.5, -1.5, 1.0, 60.0);  // good enough?
 	//gluPerspective(1.0, 5.0, 5.0, 5.0);
 	glMatrixMode(GL_MODELVIEW);
-#endif
-	glEnable(GL_DEPTH_TEST);
-	
+
 	/* set various event callback functions */
 	glutReshapeFunc(reshape_now);
 	glutIdleFunc(idle);
