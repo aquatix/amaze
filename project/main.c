@@ -83,12 +83,14 @@ char s[30];
 
 /* Variables about the world */
 double window_h=0, window_w=0;
+
 int world_h=0, world_w=0;
 GLfloat zoomlevel = 10.0;
 GLfloat world_leftright = 0.0f, world_forthback=0.0f;
+int mazeArray[100][100];	//ugly hack, because now it's always 100 big [lots of memory] and can't be bigger
 
 /* About the player */
-GLfloat player_x = 1.0, player_y=0.0;
+GLfloat player_x = 0.0, player_y=1.0;
 
 #if 0
 double time;
@@ -389,7 +391,7 @@ int loadNDrawMaze()
 	int status;
 	char filename[255];
 	FILE *in;
-
+	int i,j;
 #if 0
 	/* Texture stuff */
 	glEnable(GL_TEXTURE_2D);
@@ -420,6 +422,8 @@ int loadNDrawMaze()
 			}
 		glPopMatrix();
 
+		//createMazeArray(rows, columns);
+
 		if (status == EOF)
 		{
 			return EOF;
@@ -430,6 +434,10 @@ int loadNDrawMaze()
 			return 0;
 		}
 
+		world_h = rows;
+		world_w = columns;
+		iprint("world_h:%i world_w:%i\n",world_h, world_w);
+		
 		/* Load vertices and draw the thing */
 		for (currentRow = 0; currentRow < rows; currentRow++)
 		{
@@ -439,6 +447,7 @@ int loadNDrawMaze()
 				if (thisBlock == 1)
 				{
 					dprint("W");
+					mazeArray[block][currentRow] = 1;
 					glPushMatrix();
 						//glRotatef(theta_cube, 0.5, 1, 0);	/* Some nice rotation */
 						//glRotatef(theta_cube, 1, 0, 0);		/* Rotation around x-axis [as stated on website */
@@ -453,6 +462,7 @@ int loadNDrawMaze()
 
 				} else
 				{
+					mazeArray[block][currentRow] = 0;
 					dprint(" ");
 					//skip -> passage
 				}
@@ -461,8 +471,23 @@ int loadNDrawMaze()
 			dprint("\n");
 		}
 	}
+	for (i = 0; i < world_h; i++)
+	{
+		for (j = 0; j<world_w; j++)
+		{
+			dprint("[%i][%i]=%i ", i, j, mazeArray[i][j]);
+		}
+		dprint("\n");
+	}
+	
 	return 1;
 }
+#if 0
+int createMazeArray(int rows, int cols)
+{
+	static int mazeArray[rows][cols];
+}
+#endif
 
 /*** Draw the player, default is the dino -> not customizable ***/
 int drawPlayer()
@@ -1101,30 +1126,56 @@ void keyboard(unsigned char key, int x, int y)
 	}
 }
 
+int getIndex(GLfloat pl_coord, GLfloat distance)
+{
+	/* not yet in use */
+	return  (int)(pl_coord + distance + (world_w*0.5));
+}
+
 static void specialKeyFunc( int Key, int x, int y )
 {
+	int pl_x, pl_y, new;
+	pl_x = (int)(player_x + (world_h*0.5));
+	pl_y = (int)(player_y + (world_w*0.5));
+	iprint("x:%i y:%i\n",pl_x , pl_y);
 	switch ( Key )
 	{
 		case GLUT_KEY_UP:
 			/* Move player forwards */
-			player_y -= 0.2;
-			iprint("player x/y: %f/%f\n", player_x, player_y);
+			new = (int)(player_y - 0.2 + (world_w*0.5));
+			if (mazeArray[pl_x][new] == 0)
+			{
+				player_y -= 0.2;
+			}
+			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_DOWN:
 			//Key_down();
 			/* Move player backwards */
-			player_y += 0.2;
-			iprint("player x/y: %f/%f\n", player_x, player_y);
+			new = (int)(player_y + 0.2 + (world_w*0.5));
+			if (mazeArray[pl_x][new] == 0)
+			{
+				player_y += 0.2;
+			}
+			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_LEFT:
 			/* Move player to the left */
-			player_x -= 0.2;
-			iprint("player x/y: %f/%f\n", player_x, player_y);
+			new = (int)(player_x - 0.2 + (world_h*0.5));
+			if (mazeArray[new][pl_y] == 0)
+			{
+				player_x -= 0.2;
+			}
+			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_RIGHT:
 			/* Move player to the right */
-			player_x += 0.2;
-			iprint("player x/y: %f/%f\n", player_x, player_y);
+			new = (int)(player_x + 0.2 + (world_h*0.5));
+			if (mazeArray[new][pl_y] == 0)
+			{
+				player_x += 0.2;
+			}
+			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_PAGE_UP:
 			world_forthback += 0.5;
