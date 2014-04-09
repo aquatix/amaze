@@ -7,29 +7,28 @@
  * Computer Graphics - Final project
  * aMaze
  *
- * Version 2004-01-03
  * Michiel Scholten [ mbscholt@cs.vu.nl | 1204467 ]
  */
+#define VERSION "2004-01-05 v0.0.03"
+#define PROGINFO "[ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]"
 
 /* Displaylists */
-#define F16_MODEL 1
+typedef enum
+{
+	MODEL_PLAYER, MODEL_MAZE
+} displaylists;
 
 /* Menu-entries */
-#define MNU_QUIT 4
-#define MNU_SMOOTH 5
-#define MNU_FLAT 6
-#define MNU_VER 7
-#define MNU_HOR 8
-#define MNU_TEX_FULL 9
-#define MNU_TEX_COMP 10
-#define MNU_TEX_GRID 11
-#define MNU_TEXMODE_MOD 12
-#define MNU_TEXMODE_REP 13
-#define MNU_TEXMODE_OFF 14
+typedef enum
+{
+	MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_VER, MNU_HOR, MNU_TEX_FULL, MNU_TEX_COMP,
+	MNU_TEX_GRID, MNU_TEXMODE_MOD, MNU_TEXMODE_REP, MNU_TEXMODE_OFF,
+	MNU_BOGUS_1, MNU_BOGUS_2, MNU_BOGUS_3
+} menus;
 
 /* Switches for output to console */
-#define DEBUG_OFF
-#define INFO_OFF
+#define DEBUG
+#define INFO
 
 #ifdef DEBUG
 #define dprint printf
@@ -46,6 +45,13 @@
 #endif
 
 #define NUMBER_OF_TEXTURES 1
+
+#if 0
+char player_files[8][40]= {"../models/f-16/afterburner.sgf", "../models/f-16/body.sgf", "../models/f-16/bomb.sgf", "../models/f-16/cockpit.sgf",
+	"../models/f-16/rockets.sgf", "../models/f-16/tailfin.sgf", "../models/f-16/tailwings.sgf", "../models/f-16/wings.sgf"};
+#endif
+#define FILE_PLAYER_BASEDIR "../models/dino";
+char player_files[][40] = {"arm.sgf", "body.sgf", "eye.sgf", "leg.sgf"};
 
 /* Globally used variables */
 double time;
@@ -123,40 +129,9 @@ point3 colors[6] =
 point3 specularLight = {.5, .5, .5};
 
 ////////////////////////////////////// Lights >
-#if 0
-const float LIGHT0_POS[] =  {-1.5f, 5.0f, -15.0f, 1.0f};
-const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
-const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
-const float LIGHT0_SPECULAR[] = {0.6f, 0.6f, 0.6f, 1.0f};
-
-const float LIGHT1_POS[] =  {4.0f, -1.5f, -10.0f, 1.0f};
-const float LIGHT1_AMBIENT[] =  {0.6, 0.6f, 0.6f, 1.0f};
-const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
-const float LIGHT1_SPECULAR[] =  {0.8f, 0.4f, 0.4f, 1.0f};
-////
-const float LIGHT0_POS[] =  {-11.5f, 15.0f, -15.0f, 1.0f};
-const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
-const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
-const float LIGHT0_SPECULAR[] = {0.6f, 0.6f, 0.6f, 1.0f};
-
-const float LIGHT1_POS[] =  {14.0f, -11.5f, -110.0f, 1.0f};
-const float LIGHT1_AMBIENT[] =  {0.6, 0.6f, 0.6f, 1.0f};
-const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
-const float LIGHT1_SPECULAR[] =  {0.8f, 0.4f, 0.4f, 1.0f};
-////
-const float LIGHT0_POS[] =  {0.0f, 4.0f, 0.0f, 1.0f};
-const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
-const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
-const float LIGHT0_SPECULAR[] = {0.6f, 0.6f, 0.6f, 1.0f};
-
-const float LIGHT1_POS[] =  {4.0f, -1.5f, -10.0f, 1.0f};
-const float LIGHT1_AMBIENT[] =  {0.6f, 0.6f, 0.6f, 1.0f};
-const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
-const float LIGHT1_SPECULAR[] =  {0.8f, 0.4f, 0.4f, 1.0f};
-#endif
 const float LIGHT0_POS[] =  {2.0f, 4.0f, 2.0f, 1.0f};
 const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
-const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
+const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};
 const float LIGHT0_SPECULAR[] = {0.3f, 0.3f, 0.3f, 1.0f};
 
 const float LIGHT1_POS[] =  {4.0f, -1.5f, 10.0f, 1.0f};
@@ -199,7 +174,7 @@ void rotateCube(int value)
 	}
 }
 
-void rotateF16(int value)
+void rotatePlayer(int value)
 {
 	if (animate)
 	{
@@ -209,7 +184,7 @@ void rotateF16(int value)
 		{
 			theta_f16 -= 360.0;
 		}
-		glutTimerFunc(10, rotateF16, 1);
+		glutTimerFunc(10, rotatePlayer, 1);
 		glutPostRedisplay();
 	}
 }
@@ -258,6 +233,24 @@ int calculateNormal(point3 t1, point3 t2, point3 t3, point3 normal)
 void drawBase()
 {
 	/* Draw the base of the world */
+
+	/* So, draw a nice square: */
+#if 0
+	glBegin(GL_POLYGON);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(pyramid[0], pyramid[1], pyramid[2], normalVector);
+		glNormal3fv(normalVector);
+		glTexCoord2f(0.0, texRowY);
+		glVertex3fv(pyramid[0]);
+		glTexCoord2f(texRowX, texRowY);
+		glVertex3fv(pyramid[1]);
+		glTexCoord2f(texRowX, rowDivide);
+		glVertex3fv(pyramid[2]);
+		glTexCoord2f(0.0, rowDivide);
+		glVertex3fv(pyramid[3]);
+	glEnd();
+#endif
 }
 
 void drawMaze()
@@ -643,7 +636,7 @@ void keyboard(unsigned char key, int x, int y)
 		{
 			animate = 1;
 			glutTimerFunc(20, rotateCube, 0);
-			glutTimerFunc(10, rotateF16, 0);
+			glutTimerFunc(10, rotatePlayer, 0);
 		}
 	}
 }
@@ -675,13 +668,13 @@ void handle_menu(int whichone)
 	/* Handle the selected item */
 	switch (whichone)
 	{
-		case 1: /* item 1 */
+		case MNU_BOGUS_1: /* item 1 */
 			iprint("menu :: entry 1\n");
 			break;
-		case 2: /* item 2 */
+		case MNU_BOGUS_2: /* item 2 */
 			iprint("menu :: entry 2\n");
 			break;
-		case 3: /* item 3 */
+		case MNU_BOGUS_3: /* item 3 */
 			iprint("menu :: entry 3\n");
 			break;
 		case MNU_FLAT:
@@ -746,8 +739,19 @@ void handle_menu(int whichone)
 ////////////////////////////////////// main function and init >
 int main(int argc, char **argv)
 {
-	char f16_files[8][40]= {"../models/f-16/afterburner.sgf", "../models/f-16/body.sgf", "../models/f-16/bomb.sgf", "../models/f-16/cockpit.sgf",
-		"../models/f-16/rockets.sgf", "../models/f-16/tailfin.sgf", "../models/f-16/tailwings.sgf", "../models/f-16/wings.sgf"};
+	if (argc > 1)
+	{
+		if (strcmp(argv[1], "--version") == 0)
+		{
+			printf("aMaze version %s\n", VERSION);
+		} else
+		{
+			printf("aMaze\n\nUsage: start executable. Everything will be loaded automagically\n\nParams:\n        --version    prints version info\n");
+		}
+		printf("\n%s\n", PROGINFO);
+		return 0;
+	}
+	
 	int i, submenu_shading, submenu_rotation, submenu_textures, submenu_texmode;
 			
 	/* initialize glut and the window */
@@ -756,7 +760,7 @@ int main(int argc, char **argv)
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(800,600);
 	glutInitWindowPosition(0,0);
-	glutCreateWindow("Exercise 2 [Solar system | mbscholt@cs.vu.nl | 1204467]");
+	glutCreateWindow("Project aMaze [ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]");
 
 	/* Background color of the screen - "the sky" */
 	//glClearColor(0.0, 0.0, 0.5, 1.0);
@@ -767,7 +771,7 @@ int main(int argc, char **argv)
 	//glEnable(GL_CULL_FACE);
 
 	/* Enable special keys like GLUT_KEY_LEFT */
-	glutSpecialFunc(specialkeys);
+	//glutSpecialFunc(specialkeys);
 	
 	//glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, GL_LIGHT_MODEL_AMBIENT);
 	
@@ -819,19 +823,25 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("off",MNU_TEXMODE_OFF);
 
 	glutCreateMenu(handle_menu);
-	glutAddMenuEntry("menuentry 1", 1);
-	glutAddMenuEntry("menuentry 2", 2);
-	glutAddMenuEntry("menuentry 3", 3);
-//	glutAddMenuEntry("-", 0);
+	glutAddMenuEntry("menuentry 1", MNU_BOGUS_1);
+	glutAddMenuEntry("menuentry 2", MNU_BOGUS_2);
+	glutAddMenuEntry("menuentry 3", MNU_BOGUS_3);
 	glutAddSubMenu("shading", submenu_shading);
 	glutAddSubMenu("rotationtype", submenu_rotation);
 	glutAddSubMenu("textures", submenu_textures);
 	glutAddSubMenu("texture mode", submenu_texmode);
-//	glutAddMenuEntry("-", 0);
 	glutAddMenuEntry("quit [q, esc]", MNU_QUIT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
+
+	/* Load the player [dino] */
+	for (i = 0; i < PLAYER_NR_FILES; i++)
+	{
+		//
+	}
+	
 	/* Load the F16 into a display list | void glNewList(GLuint listID, GLenum mode); */
+#if 0
 	glNewList(F16_MODEL, GL_COMPILE);
 	for (i = 0; i < 8; i++)
 	{
@@ -853,7 +863,8 @@ int main(int argc, char **argv)
 		}
 	}
 	glEndList();
-	
+#endif
+
 	/* now loop */
 	glutMainLoop();
 
