@@ -7,7 +7,7 @@
  * Computer Graphics - Final project
  * aMaze
  *
- * Version 2003-12-03
+ * Version 2004-01-03
  * Michiel Scholten [ mbscholt@cs.vu.nl | 1204467 ]
  */
 
