@@ -15,6 +15,8 @@
  * Michiel Scholten [ mbscholt@cs.vu.nl ]
  */
 
+#define F16_MODEL 0
+
 double time;
 int mousedown = 0;
 double theta;
@@ -297,11 +299,26 @@ void display(void)
 }
 
 ////////////////////////////////////// Loading stuff >
-int loadModel()
+int loadModel(char *filename[], int nrOfFiles, int identifier)
 {
 	/* Load a model from file, in our case the F16 plane
 	 * Check for existence of file, return 0 if error, otherwise 1 [or the number of vertices or something?]
+	 * If succesfull, load everything in a list
 	 */
+	int i;
+	FILE *in;
+	for (i = 0; i < nrOfFiles; i++)
+	{
+		printf("%i\n", i);
+		if ((in = fopen(filename[i], "r")) == NULL)
+		{
+			printf("error %i\n", i);
+			printf("Unable to open the file [file #%i, name: %s]\n", i, filename[i]);
+			return 0;
+		}
+		printf("good %i\n", i);
+		printf("%s\n", *filename[i]);
+	}
 	//scanf();
 }
 ////////////////////////////////////// Loading stuff <
@@ -391,6 +408,9 @@ void reshape_now(GLsizei w, GLsizei h)
 
 int main(int argc, char **argv)
 {
+	char f16_files = {"afterburner.sgf", "body.sgf", "bomb.sgf", "cockpit.sgf",
+		"rockets.sgf", "tailfin.sgf", "tailwings.sgf", "wings.sgf"};
+			
 	/* the menus */
 
 	/* initialize glut and the window */
@@ -421,7 +441,10 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("quit [q, esc]", 4);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
-	glutTimerFunc(30, rotatePyramid, 0);
+	//glutTimerFunc(30, rotatePyramid, 0);
+	
+	/* Load the F16 */
+	loadModel(&f16_files, 8, F16_MODEL);
 	
 	/* now loop */
 	glutMainLoop();
