@@ -17,6 +17,7 @@
 
 double time;
 double theta;
+int mousedown = 0;
 
 /* Define vertex */
 typedef GLfloat point3[3];
@@ -35,83 +36,18 @@ void idle(void)
 	glutPostRedisplay();
 }
 
-void keyboard(unsigned char key, int x, int y)
+
+void rotate(int value)
 {
-	/* When q, Q or ESC is pressed, exit the program */
-	if ( key == 'q' || key == 'Q' || key == 27)
+	if (mousedown)
 	{
-		exit(0);
-	}
-}
-
-void mouse(int btn, int btn_state, int x, int y)
-{
-	if ( btn_state == GLUT_DOWN )
-	{
-		printf("mouse :: x = %i, y = %i", x, y);
-	}
-
-	/* Print the states of the mouse buttons */
-	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_DOWN )
-	{
-		printf(" :: left button down\n");
-	}
-	if ( btn == GLUT_MIDDLE_BUTTON && btn_state == GLUT_DOWN )
-	{
-		printf(" :: middle button down\n");
-	}
-	if ( btn == GLUT_RIGHT_BUTTON && btn_state == GLUT_DOWN )
-	{
-		printf(" :: right button down\n");
-	}
-}
-
-void handle_menu(int whichone)
-{
-	switch (whichone)
-	{
-		case 1: /* item 1 */
-			printf("menu :: entry 1\n");
-			break;
-		case 2: /* item 2 */
-			printf("menu :: entry 2\n");
-			break;
-		case 3: /* item 3 */
-			printf("menu :: entry 3\n");
-			break;
-		case 4:
-			printf("menu :: quit entry chosen, exiting\n");
-			exit(0);
-			break;
-	}
-	
-}
-
-void reshape_now(GLsizei w, GLsizei h)
-{
-	/* adjust clipping box */
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(45.0, w/h, 2.0, 40.0);
-	glMatrixMode(GL_MODELVIEW);
-	/* adjust viewport and draw the picture */
-
-	if (h < w)
-	{
-		glViewport( w / 2 - h / 2, 0, h, h);
-	} else
-	{
-		glViewport( 0, h / 2 - w / 2, w, w);
-	}
-}
-
-void rotate()
-{
-	/* Every 30msec */
-	theta += 10.8;
-	if ( theta >= 360.0 )
-	{
-		theta -= 360.0;
+		/* Every 30msec, but only if value != 0 [it is when the mouse button is pushed] */
+		theta += 10.8;
+		if ( theta >= 360.0 )
+		{
+			theta -= 360.0;
+		}
+		glutTimerFunc(30, rotate, 1);
 	}
 }
 
@@ -322,16 +258,6 @@ void display(void)
 	//drawCube();
 	glFlush();
 	glutSwapBuffers();
-	/* convert degrees to radians */
-/*
-	thetar = theta * ((2.0 * 3.14159) / 360.0);
-	glVertex2f( cos(thetar), sin(thetar));
-	glVertex2f(-sin(thetar), cos(thetar));
-	glVertex2f(-cos(thetar),-sin(thetar));
-	glVertex2f( sin(thetar),-cos(thetar));
-	glEnd();
-*/
-
 }
 
 int loadModel()
@@ -342,6 +268,75 @@ int loadModel()
 	//scanf();
 }
 
+void keyboard(unsigned char key, int x, int y)
+{
+	/* When q, Q or ESC is pressed, exit the program */
+	if ( key == 'q' || key == 'Q' || key == 27)
+	{
+		exit(0);
+	}
+}
+
+void mouse(int btn, int btn_state, int x, int y)
+{
+	/* Print the states of the mouse buttons */
+	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_DOWN )
+	{
+		mousedown = 1;
+		glutTimerFunc(30, rotate, 0);
+	}
+	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_UP )
+	{
+		mousedown = 0;
+	}
+	if ( btn == GLUT_MIDDLE_BUTTON && btn_state == GLUT_DOWN )
+	{
+		printf(" :: middle button down\n");
+	}
+	if ( btn == GLUT_RIGHT_BUTTON && btn_state == GLUT_DOWN )
+	{
+		printf(" :: right button down\n");
+	}
+}
+
+void handle_menu(int whichone)
+{
+	switch (whichone)
+	{
+		case 1: /* item 1 */
+			printf("menu :: entry 1\n");
+			break;
+		case 2: /* item 2 */
+			printf("menu :: entry 2\n");
+			break;
+		case 3: /* item 3 */
+			printf("menu :: entry 3\n");
+			break;
+		case 4:
+			printf("menu :: quit entry chosen, exiting\n");
+			exit(0);
+			break;
+	}
+	
+}
+
+void reshape_now(GLsizei w, GLsizei h)
+{
+	/* adjust clipping box */
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0, w/h, 2.0, 40.0);
+	glMatrixMode(GL_MODELVIEW);
+	/* adjust viewport and draw the picture */
+
+	if (h < w)
+	{
+		glViewport( w / 2 - h / 2, 0, h, h);
+	} else
+	{
+		glViewport( 0, h / 2 - w / 2, w, w);
+	}
+}
 int main(int argc, char **argv)
 {
 	/* the menus */
@@ -382,6 +377,10 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("quit [q, esc]", 4);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
+	glutTimerFunc(30, rotate, 0);
+	
 	/* now loop */
 	glutMainLoop();
 }
+
+
