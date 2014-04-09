@@ -39,12 +39,13 @@ void idle(void)
 }
 
 
+////////////////////////////////////// Rotating functions >
 void rotatePyramid(int value)
 {
 	if (mousedown && cube_on)
 	{
-		/* Every 30msec, but only if value != 0 [it is when the mouse button is pushed] */
-		theta += 10.8;
+		/* Every 30msec, but only if the left mouse button is pushed. Rotating ones every 3sec */
+		theta += 3.6;
 		if ( theta >= 360.0 )
 		{
 			theta -= 360.0;
@@ -58,8 +59,8 @@ void rotateCube(int value)
 {
 	if (cube_on)
 	{
-		/* Every 20msec, but only if user has enabled it */
-		theta_cube += 20;
+		/* Every 20msec, but only if user has enabled it with the spacebar */
+		theta_cube += 2;
 		if ( theta_cube >= 360.0 )
 		{
 			theta_cube -= 360.0;
@@ -68,7 +69,9 @@ void rotateCube(int value)
 		glutPostRedisplay();
 	}
 }
+////////////////////////////////////// Rotating functions <
 
+////////////////////////////////////// Ish >
 int copyPoint3v(point3 *src, point3 *dest, int number)
 {
 	int i;
@@ -92,7 +95,9 @@ int copyPoint3(point3 *src, point3 *dest)
 printf("point: %i\n", dest);
 	return 1;
 }
+////////////////////////////////////// Ish <
 
+////////////////////////////////////// Drawing >
 void drawPyramid()
 {
 	point3 base[4];
@@ -254,10 +259,10 @@ int drawTriangle(point3 *vertices, point3 colors)
 		glVertex3fv(vertices[2]);
 	glEnd();
 }
+////////////////////////////////////// Drawing <
 
 void display(void)
 {
-//	double thetar;
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -275,14 +280,14 @@ void display(void)
 		glRotatef(theta, 0, 1, 0);
 		drawPyramid();
 
-		glRotatef(theta_cube, 0, 1, 0);
-		glPushMatrix();
-			glTranslatef(0.0f, 0.0f, 6.0f);
-			glRotatef(theta_cube, 0.5, 1, 0);
-			drawCube();
-		glPopMatrix();
 	glPopMatrix();
 
+	glRotatef(theta_cube, 0, 1, 0);
+	glPushMatrix();
+		glTranslatef(0.0f, 0.0f, 6.0f);
+		glRotatef(theta_cube, 0.5, 1, 0);
+		drawCube();
+	glPopMatrix();
 	
 
 
@@ -291,6 +296,7 @@ void display(void)
 	glutSwapBuffers();
 }
 
+////////////////////////////////////// Loading stuff >
 int loadModel()
 {
 	/* Load a model from file, in our case the F16 plane
@@ -298,7 +304,9 @@ int loadModel()
 	 */
 	//scanf();
 }
+////////////////////////////////////// Loading stuff <
 
+////////////////////////////////////// Handlers >
 void keyboard(unsigned char key, int x, int y)
 {
 	/* When q, Q or ESC is pressed, exit the program */
@@ -361,6 +369,7 @@ void handle_menu(int whichone)
 	}
 	
 }
+////////////////////////////////////// Handlers <
 
 void reshape_now(GLsizei w, GLsizei h)
 {
@@ -379,6 +388,7 @@ void reshape_now(GLsizei w, GLsizei h)
 		glViewport( 0, h / 2 - w / 2, w, w);
 	}
 }
+
 int main(int argc, char **argv)
 {
 	/* the menus */
