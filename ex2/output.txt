@@ -1,0 +1,16 @@
+Loading "../models/f-16/afterburner.sgf" ...  - read type TRIANGLES, nr of vertices is 456
+done
+Loading "../models/f-16/body.sgf" ...  - read type TRIANGLES, nr of vertices is 3930
+done
+Loading "../models/f-16/bomb.sgf" ...  - read type TRIANGLES, nr of vertices is 3816
+done
+Loading "../models/f-16/cockpit.sgf" ...  - read type TRIANGLES, nr of vertices is 366
+done
+Loading "../models/f-16/rockets.sgf" ...  - read type TRIANGLES, nr of vertices is 4476
+done
+Loading "../models/f-16/tailfin.sgf" ...  - read type TRIANGLES, nr of vertices is 294
+done
+Loading "../models/f-16/tailwings.sgf" ...  - read type TRIANGLES, nr of vertices is 150
+done
+Loading "../models/f-16/wings.sgf" ...  - read type TRIANGLES, nr of vertices is 288
+done
