@@ -1,23 +1,27 @@
 #include <GL/glut.h>
 #include <stdio.h>
 
-#include </home/mbscholt/mydocs/vu/20032004/cg/exercises/util/glutil.h>
-/*
 #include </home/mbscholt/xc_home/mydocs/vu/20032004/cg/exercises/util/glutil.h>
-
+/*
 #include "util/glutil.h"
+#include </home/mbscholt/mydocs/vu/20032004/cg/exercises/util/glutil.h>
 */
 
 /*
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-10
+ * Version 2003-11-13
  * Michiel Scholten [ mbscholt@cs.vu.nl ]
  */
 
 double time;
 double theta;
+
+/* Define vertex */
+typedef GLfloat point3f[3];
+
+point3 pyramid[] = {{0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {
 
 void idle(void)
 {
@@ -137,7 +141,7 @@ void drawPyramid()
 	glPushMatrix();
 }
 
-void drawSquare()
+void drawSquare( point3 coords, glColor3ub colors )
 {
 	/* we want a red square, so pick a nice red */
 	glColor3ub( 175.0, 0.0, 0.0 );
@@ -197,7 +201,8 @@ int main(int argc, char **argv)
 
 	/* initialize glut and the window */
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
+	/* Use rgb, double buffering and hidden surface removal */
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(800,600);
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("exercise 2 - solar system");
