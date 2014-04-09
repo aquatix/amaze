@@ -234,6 +234,14 @@ void display(void)
 	glFlush();
 }
 
+int loadModel()
+{
+	/* Load a model from file, in our case the F16 plane
+	 * Check for existence of file, return 0 if error, otherwise 1 [or the number of vertices or something?]
+	 */
+	scanf();
+}
+
 int main(int argc, char **argv)
 {
 	/* the menus */
