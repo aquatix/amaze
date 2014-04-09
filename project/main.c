@@ -21,7 +21,7 @@ typedef enum
 /*** Menu-entries ***/
 typedef enum
 {
-	MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_VER, MNU_HOR, MNU_TEX_FULL, MNU_TEX_COMP,
+	MNU_NONE, MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_VER, MNU_HOR, MNU_TEX_FULL, MNU_TEX_COMP,
 	MNU_TEX_GRID, MNU_TEXMODE_MOD, MNU_TEXMODE_REP, MNU_TEXMODE_OFF,
 	MNU_BOGUS_1, MNU_BOGUS_2, MNU_BOGUS_3
 } menus;
@@ -55,6 +55,10 @@ typedef enum
 
 #define FILE_PLAYER_BASEDIR "../models/dino/"
 char player_files[][40] = {"arm.sgf", "body.sgf", "eye.sgf", "leg.sgf"};
+typedef enum
+{
+	player_arm, player_body, player_eye, player_leg
+} modelIds;
 #define PLAYER_NR_FILES 4
 
 #define TEXTURES_BASEDIR "../textures/"
@@ -75,19 +79,26 @@ typedef enum
 int frame=0,time,timebase=0;
 int font=(int)GLUT_BITMAP_8_BY_13;
 char s[30];
+//char s[100];
 
+/* Variables about the world */
 double window_h=0, window_w=0;
 int world_h=0, world_w=0;
+GLfloat zoomlevel = 10.0;
+GLfloat world_leftright = 0.0f, world_forthback=0.0f;
+
+/* About the player */
+GLfloat player_x = 1.0, player_y=0.0;
 
 #if 0
 double time;
 double theta_pyramid, theta_cube, theta_f16;
 #endif
+
+/* Switchers for animation and stuff */
 int mousedown = 0;
 int animate = 1;
 int texturesEnabled = 1;
-
-GLfloat zoomlevel = 10.0;
 
 /*
 int pyr_x = 1;
@@ -456,6 +467,8 @@ int loadNDrawMaze()
 /*** Draw the player, default is the dino -> not customizable ***/
 int drawPlayer()
 {
+	glScaled(0.2,0.2,0.2);
+	drawCube(texture_reptile);
 	return 1;
 }
 
@@ -741,7 +754,8 @@ void renderScene(void)
 	if (time - timebase > 1000)
 	{
 //printf("1s elapsed\n");
-		sprintf(s,"FPS:%4.2f", frame * 1000.0 / (time-timebase));
+		sprintf(s,"FPS: %4.2f", frame * 1000.0 / (time-timebase));
+		//sprintf(s,"Time elapsed: %i | FPS:%4.2f", (timebase/1000), frame * 1000.0 / (time-timebase));
 		timebase = time;		
 		frame = 0;
 	}
@@ -755,6 +769,8 @@ void renderScene(void)
 	resetPerspectiveProjection();
 	/* FPS stuff < */
 #endif
+	glPushMatrix();
+		glTranslatef(world_leftright, 0.0f, world_forthback);
 #if 0
 	/* Cube tryout > */
 	glPushMatrix();
@@ -780,6 +796,8 @@ void renderScene(void)
 	/* Draw the player > */
 	glPushMatrix();
 		/* TODO: change place, because user can control it to walk across the base */
+		//glTranslatef(player_x, player_y, 0.00f);
+		glTranslatef(player_x, 0.5f, player_y);
 		drawPlayer();
 	glPopMatrix();
 	/* Draw the player < */
@@ -789,8 +807,13 @@ void renderScene(void)
 
 
 
+	/*** Transpose the whole world to the left/right [done with arrow_left/-right] ***/
+		//glTranslatef(world_leftright, 0.0f, 0.00f);
+		//glTranslatef(world_leftright, 0.0f, 0.00f);
+	glPopMatrix();
 
 
+	
 	/* Finally, show the new frame */
 	glFlush();
 	glutSwapBuffers();
@@ -1006,6 +1029,7 @@ int loadPlayer(void)
 	char filename[255];
 return 1;
 	/* Load the player [dino] */
+#if 0
 	for (i = 0; i < PLAYER_NR_FILES; i++)
 	{
 		filename[0]='\0';	//reset the string
@@ -1013,6 +1037,11 @@ return 1;
 		strcat(filename, player_files[i]);
 		loadModel(filename, texture_reptile);
 	}
+#endif
+	filename[0]='\0';	//reset the string
+	strcat(filename, FILE_PLAYER_BASEDIR);
+	strcat(filename, player_files[player_arm]);
+	loadModel(filename, texture_reptile);
 	return 1;
 }
 
@@ -1059,6 +1088,50 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		//iprint("Adjusting zoomlevel: zoom out to %f\n", zoomlevel);
 		zoomlevel += 0.5;
+	}
+	if ( (key == ',' || key == '<') && world_leftright > (-world_w - 100) )
+	{
+		world_leftright += 0.5;
+		//iprint("world_leftright = %f\n", world_leftright);
+	}
+	if ( (key == '.' || key == '>') && world_leftright < (world_w + 100) )
+	{
+		world_leftright -= 0.5;
+		//iprint("world_leftright = %f\n", world_leftright);
+	}
+}
+
+static void specialKeyFunc( int Key, int x, int y )
+{
+	switch ( Key )
+	{
+		case GLUT_KEY_UP:
+			/* Move player forwards */
+			player_y -= 0.2;
+			iprint("player x/y: %f/%f\n", player_x, player_y);
+			break;
+		case GLUT_KEY_DOWN:
+			//Key_down();
+			/* Move player backwards */
+			player_y += 0.2;
+			iprint("player x/y: %f/%f\n", player_x, player_y);
+			break;
+		case GLUT_KEY_LEFT:
+			/* Move player to the left */
+			player_x -= 0.2;
+			iprint("player x/y: %f/%f\n", player_x, player_y);
+			break;
+		case GLUT_KEY_RIGHT:
+			/* Move player to the right */
+			player_x += 0.2;
+			iprint("player x/y: %f/%f\n", player_x, player_y);
+			break;
+		case GLUT_KEY_PAGE_UP:
+			world_forthback += 0.5;
+			break;
+		case GLUT_KEY_PAGE_DOWN:
+			world_forthback -= 0.5;
+			break;
 	}
 }
 
@@ -1225,6 +1298,7 @@ int main(int argc, char **argv)
 	glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
 	glutIdleFunc(renderScene);
+	glutSpecialFunc(specialKeyFunc);
 
 	/* Load the texture[s] */
 	loadTextures();
@@ -1252,10 +1326,12 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("menuentry 1", MNU_BOGUS_1);
 	glutAddMenuEntry("menuentry 2", MNU_BOGUS_2);
 	glutAddMenuEntry("menuentry 3", MNU_BOGUS_3);
+	glutAddMenuEntry("-----------------------", MNU_NONE);
 	glutAddSubMenu("shading", submenu_shading);
-	glutAddSubMenu("rotationtype", submenu_rotation);
+	//glutAddSubMenu("rotationtype", submenu_rotation);
 	glutAddSubMenu("textures", submenu_textures);
 	glutAddSubMenu("texture mode", submenu_texmode);
+	glutAddMenuEntry("-----------------------", MNU_NONE);
 	glutAddMenuEntry("quit [q, esc]", MNU_QUIT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 	/*** menu < ***/
