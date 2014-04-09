@@ -16,8 +16,10 @@
  */
 
 double time;
-double theta;
 int mousedown = 0;
+double theta;
+double theta_cube;
+int cube_on = 0;
 
 /* Define vertex */
 typedef GLfloat point3[3];
@@ -37,9 +39,9 @@ void idle(void)
 }
 
 
-void rotate(int value)
+void rotatePyramid(int value)
 {
-	if (mousedown)
+	if (mousedown && cube_on)
 	{
 		/* Every 30msec, but only if value != 0 [it is when the mouse button is pushed] */
 		theta += 10.8;
@@ -47,7 +49,22 @@ void rotate(int value)
 		{
 			theta -= 360.0;
 		}
-		glutTimerFunc(30, rotate, 1);
+		glutTimerFunc(30, rotatePyramid, 1);
+		glutPostRedisplay();
+	}
+}
+
+void rotateCube(int value)
+{
+	if (cube_on)
+	{
+		/* Every 20msec, but only if user has enabled it */
+		theta_cube += 20;
+		if ( theta_cube >= 360.0 )
+		{
+			theta_cube -= 360.0;
+		}
+		glutTimerFunc(20, rotateCube, 1);
 		glutPostRedisplay();
 	}
 }
@@ -255,11 +272,13 @@ void display(void)
 #if 0
 	glTranslatef(0.0f, 0.0f, 3.0f);
 #endif
-		glRotatef(theta, 0.5, 1, 0);
+		glRotatef(theta, 0, 1, 0);
 		drawPyramid();
 
+		glRotatef(theta_cube, 0, 1, 0);
 		glPushMatrix();
-			glTranslatef(0.0f, 0.0f, 3.0f);
+			glTranslatef(0.0f, 0.0f, 6.0f);
+			glRotatef(theta_cube, 0.5, 1, 0);
 			drawCube();
 		glPopMatrix();
 	glPopMatrix();
@@ -287,6 +306,17 @@ void keyboard(unsigned char key, int x, int y)
 	{
 		exit(0);
 	}
+	if ( key == ' ' )
+	{
+		if ( cube_on )
+		{
+			cube_on = 0;
+		} else
+		{
+			cube_on = 1;
+			glutTimerFunc(20, rotateCube, 0);
+		}
+	}
 }
 
 void mouse(int btn, int btn_state, int x, int y)
@@ -295,7 +325,7 @@ void mouse(int btn, int btn_state, int x, int y)
 	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_DOWN )
 	{
 		mousedown = 1;
-		glutTimerFunc(30, rotate, 0);
+		glutTimerFunc(30, rotatePyramid, 0);
 	}
 	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_UP )
 	{
@@ -381,7 +411,7 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("quit [q, esc]", 4);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
-	glutTimerFunc(30, rotate, 0);
+	glutTimerFunc(30, rotatePyramid, 0);
 	
 	/* now loop */
 	glutMainLoop();
