@@ -302,15 +302,18 @@ void display(void)
 	glTranslatef(0.0f, 0.0f, 3.0f);
 #endif
 		glRotatef(theta_pyramid, 0, 1, 0);
+		glScaled(2.0,2.0,2.0);
 		drawPyramid();
 
 	glPopMatrix();
 
-	glRotatef(theta_cube, 0, 1, 0);
+	glRotatef(theta_cube, 0.5, 1, 0);
 	glPushMatrix();
-		glTranslatef(0.0f, 0.0f, 6.0f);
+		glTranslatef(0.0f, 0.0f, 10.0f);
 		glPushMatrix();
-		glRotatef(theta_cube, 0.5, 1, 0);
+		//glScaled(4.0,4.0,4.0);
+		//glRotatef(theta_cube, 0.5, 1, 0);	/* Some nice rotation */
+		glRotatef(theta_cube, 1, 0, 0);
 		drawCube();
 		glPopMatrix();
 
@@ -376,7 +379,6 @@ int loadModel(char *filename)
 	while (!feof(in))
 	{
 		status = fscanf(in, " %s %i \n", &identifier, &nrVertices);
-//dprint("\n - read type %s, nr of vertices is %i", identifier, nrVertices);
 dprint(" - read type %s, nr of vertices is %i\n", identifier, nrVertices);
 
 		if (status == EOF)
@@ -395,43 +397,33 @@ dprint(" - read type %s, nr of vertices is %i\n", identifier, nrVertices);
 		 */
 		if (strcmp(identifier, "POINTS") == 0)
 		{
-			//thisType = GL_POINTS;
 			glBegin(GL_POINTS);
 		} else if (strcmp(identifier, "LINES") == 0)
 		{
-//			thisType = GL_LINES;
 			glBegin(GL_LINES);
 		} else if (strcmp(identifier, "LINE_STRIP") == 0)
 		{
-//			thisType = GL_LINE_STRIP;
 			glBegin(GL_LINE_STRIP);
 		} else if (strcmp(identifier, "LINE_LOOP") == 0)
 		{
-//			thisType = GL_LINE_LOOP;
 			glBegin(GL_LINE_LOOP);
 		} else if (strcmp(identifier, "TRIANGLES") == 0)
 		{
-			//thisType = GL_TRIANGLES;
 			glBegin(GL_TRIANGLES);
 		} else if (strcmp(identifier, "QUADS") == 0)
 		{
-//			thisType = GL_QUADS;
 			glBegin(GL_QUADS);
 		} else if (strcmp(identifier, "TRIANGLE_STRIP") == 0)
 		{
-//			thisType = GL_TRIANGLE_STRIP;
 			glBegin(GL_TRIANGLE_STRIP);
 		} else if (strcmp(identifier, "TRIANGLE_FAN") == 0)
 		{
-//			thisType = GL_TRIANGLE_FAN;
 			glBegin(GL_TRIANGLE_FAN);
 		} else if (strcmp(identifier, "QUAD_STRIP") == 0)
 		{
-//			thisType = GL_QUAD_STRIP;
 			glBegin(GL_QUAD_STRIP);
 		} else if (strcmp(identifier, "POLYGON") == 0)
 		{
-//			thisType = GL_POLYGON;
 			glBegin(GL_POLYGON);
 		} else
 		{
@@ -439,20 +431,18 @@ dprint(" - read type %s, nr of vertices is %i\n", identifier, nrVertices);
 			printf("ERROR @ loadModel :: unknown identifier!\n");
 			return -1;
 		}
-		/* Draw the thing */
-		//glBegin(thisType);
+		/* Load vertices and draw the thing */
 		glColor3fv(colors[0]);
 		for (vertex = 0; vertex < nrVertices; vertex++)
 		{
-//dprint("%i\n", vertex);
 			fscanf(in, " %f %f %f %f %f %f\n", &vertex_x, &vertex_y, &vertex_z, &normal_x, &normal_y, &normal_z);
 			//glNormal3f(normal_x, normal_y, normal_z);
 			glVertex3f(vertex_x, vertex_y, vertex_z);
-//dprint(" - read vertex %f, %f, %f\n", vertex_x, vertex_y, vertex_z);
 		}
 		glEnd();
 	}
 	printf("done\n");
+	return 1;
 }
 ////////////////////////////////////// Loading stuff <
 
@@ -524,11 +514,20 @@ void handle_menu(int whichone)
 
 void reshape_now(GLsizei w, GLsizei h)
 {
-	/* adjust clipping box */
+	double whRatio = (double)h / (double)w;
+	glViewport(0, 0, w, h);
+	printf("%f\n", whRatio);
+	fflush(stdout);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glFrustum(-0.3, 0.3, -whRatio * 0.3 ,whRatio * 0.3 ,0.3 ,100);
+	glMatrixMode(GL_MODELVIEW);
+#if 0
+	/* adjust clipping box *//*
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(45.0, w/h, 2.0, 40.0);
-	glMatrixMode(GL_MODELVIEW);
+	glMatrixMode(GL_MODELVIEW);*/
 	/* adjust viewport and draw the picture */
 	if (h < w)
 	{
@@ -537,6 +536,7 @@ void reshape_now(GLsizei w, GLsizei h)
 	{
 		glViewport( 0, h / 2 - w / 2, w, w);
 	}
+#endif
 }
 
 int main(int argc, char **argv)
@@ -546,6 +546,9 @@ int main(int argc, char **argv)
 		"rockets.sgf", "tailfin.sgf", "tailwings.sgf", "wings.sgf"};
 	int i;
 #endif
+	char f16_files[8][40]= {"../models/f-16/afterburner.sgf", "../models/f-16/body.sgf", "../models/f-16/bomb.sgf", "../models/f-16/cockpit.sgf",
+		"../models/f-16/rockets.sgf", "../models/f-16/tailfin.sgf", "../models/f-16/tailwings.sgf", "../models/f-16/wings.sgf"};
+	int i;
 			
 	/* the menus */
 
@@ -586,12 +589,15 @@ int main(int argc, char **argv)
 	/* Load the F16 into a list */
 	//void glNewList(GLuint listID, GLenum mode);
 	glNewList(F16_MODEL, GL_COMPILE);
-#if 0
 	for (i = 0; i < 8; i++)
 	{
-		loadModel(&f16_files[i]);
+		if (loadModel(&f16_files[i]) == 0)
+		{
+			printf("ERROR while loading %s\n", f16_files[i]);
+			exit(1);
+		}
 	}
-#endif
+#if 0
 		loadModel("../models/f-16/afterburner.sgf");
 		loadModel("../models/f-16/body.sgf");
 		loadModel("../models/f-16/bomb.sgf");
@@ -601,6 +607,7 @@ int main(int argc, char **argv)
 		loadModel("../models/f-16/tailwings.sgf");
 		loadModel("../models/f-16/wings.sgf");
 	//loadModel(&f16_files, 8, F16_MODEL);
+#endif
 	void glEndList(void);
 	
 	/* now loop */
