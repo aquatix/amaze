@@ -1,17 +1,17 @@
 #include <GL/glut.h>
 #include <stdio.h>
 
-#include </home/mbscholt/xc_home/mydocs/vu/20032004/cg/exercises/util/glutil.h>
+#include </home/mbscholt/mydocs/vu/20032004/cg/exercises/util/glutil.h>
 /*
 #include "util/glutil.h"
-#include </home/mbscholt/mydocs/vu/20032004/cg/exercises/util/glutil.h>
+#include </home/mbscholt/xc_home/mydocs/vu/20032004/cg/exercises/util/glutil.h>
 */
 
 /*
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-14
+ * Version 2003-11-17
  * Michiel Scholten [ mbscholt@cs.vu.nl ]
  */
 
@@ -32,11 +32,16 @@ typedef GLfloat point3[3];
  */
 
 /*point3 pyramid[] = {{0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {*/
+/*
 point3 pyr_tr1[] = {{0.0, 1.0, 0.0}, {-1.0, 0.0,  1.0}, { 1.0, 0.0,  1.0}};
 point3 pyr_tr2[] = {{0.0, 1.0, 0.0}, { 1.0, 0.0,  1.0}, { 1.0, 0.0, -1.0}};
 point3 pyr_tr3[] = {{0.0, 1.0, 0.0}, { 1.0, 0.0, -1.0}, {-1.0, 0.0, -1.0}};
 point3 pyr_tr4[] = {{0.0, 1.0, 0.0}, {-1.0, 0.0, -1.0}, {-1.0, 0.0,  1.0}};
+*/
 /*base ???*/
+
+point3 pyramid[5] = {{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.0,-1.0,-1.0},	/* base */
+	{0.0, 1.0, 0.0}};									/* top */
 
 point3 cube[8] = {{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
 	{1.0, 1.0, -1.0}, {-1.0,1.0,-1.0}, {-1.0, -1.0, 1.0},
@@ -136,12 +141,22 @@ void reshape_now(GLsizei w, GLsizei h)
 //	glFlush();
 }
 
+int copyPoint3(point3 src, point3 dest)
+{
+	//
+}
+
 void drawPyramid()
 {
+	point3 base[4];
 	/* we want a pyramid with a square base, every side a different colour */
 	glColor3ub( 0.0, 175.0, 0.0);
 	glPopMatrix();
 	/* Draw the square base */
+	base[0] = {1.0,0.0,1.0}; // pyramid[0];
+	base[1] = pyramid[1];
+	base[2] = pyramid[2];
+	base[3] = pyramid[3];
 	drawSquare(base, color);
 	/*
 	glBegin(GL_POLYGON);
@@ -174,7 +189,7 @@ void drawCube()
 	drawSquare(cube, color);
 }
 
-void drawSquare( point3 vertices[], glColor3ub colors )
+void drawSquare( point3 *vertices, glColor3ub colors )
 {
 	/* set the color of the square */
 	glColor3ub( colors );
@@ -259,7 +274,7 @@ int main(int argc, char **argv)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 /*	glOrtho(-10.0, 10.0, -10.0, 10.0, -1.0, 1.0);*/
-//	glFrustrum(
+	glFrustrum(-2.0, 2.0, 1.5, -1.5, 1.0, 60.0);  // good enough?
 	glMatrixMode(GL_MODELVIEW);
 
 	/* set various event callback functions */
