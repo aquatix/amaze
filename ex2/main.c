@@ -133,13 +133,20 @@ int copyPoint3v(point3 *src, point3 *dest, int number)
 	int i;
 	for (i=0; i<number; i++)
 	{
-		*dest[i] = *src[i];
+		copyPoint3(*dest[i], *src[i]);
 	}
 	return 1;
 }
 
 int copyPoint3(point3 *src, point3 *dest)
 {
+	/*
+	int i;
+	for (i = 0; i<4; i++)
+	{
+		*dest[i] = *src[i];
+	}
+	*/
 	dest = src;
 	return 1;
 }
@@ -150,7 +157,7 @@ void drawPyramid()
 	point3 triangle[3];
 	/* we want a pyramid with a square base, every side a different colour */
 	//glColor3ub(0.0, 175.0, 0.0);
-	glPopMatrix();
+	glPushMatrix();
 	/* Draw the square base */
 	copyPoint3v(pyramid, base, 4);
 	drawSquare(base, colors);
@@ -176,6 +183,7 @@ void drawPyramid()
 	copyPoint3(&pyramid[4], &triangle[2]);
 	drawTriangle(&triangle, &colors);
 	
+	glPopMatrix();
 	/*
 	glBegin(GL_POLYGON);
 		glVertex3i(-5, -5);
@@ -184,8 +192,8 @@ void drawPyramid()
 		glVertex3i( 5, -5);
 	glEnd();
 	*/
+	/*
 	glColor3ub( 175.0, 0.0, 0.0 );
-	/* now draw it */
 	glPopMatrix();
 	glBegin(GL_POLYGON);
 		glVertex2i(-5, -5);
@@ -194,6 +202,7 @@ void drawPyramid()
 		glVertex2i( 5, -5);
 	glEnd();
 	glPushMatrix();
+	*/
 }
 
 int drawCube()
@@ -269,7 +278,7 @@ void display(void)
 
 	//drawFrame();
 	drawPyramid();
-	drawCube();
+	//drawCube();
 	glutSwapBuffers();
 	/* convert degrees to radians */
 /*
