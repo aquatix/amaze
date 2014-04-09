@@ -9,9 +9,9 @@
  *
  * Copyright 2004 Michiel Scholten
  */
-#define VERSION "2004-01-11 v0.2.01"
+#define VERSION "2004-01-12 v0.2.02"
 //#define PROGINFO "[ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]"
-#define PROGINFO "[ Michiel Scholten | mbscholt@aquariusoft.org ]"
+#define PROGINFO "[ 2004-01-12 v0.2.02 | amaze@aquariusoft.org ]"
 
 /*** Displaylists ***/
 typedef enum
@@ -26,9 +26,9 @@ typedef enum
 } menus;
 
 /*** Switches for output to console ***/
-#define DEBUG_ON
-#define INFO_ON
-#define MAZEDEBUG_ON
+#define DEBUG_OFF
+#define INFO_OFF
+#define MAZEDEBUG_OFF
 
 #define FPS_ON
 #define FOG_ON
@@ -1115,6 +1115,7 @@ void handle_menu(int whichone)
 ////////////////////////////////////// main function and init >
 int buildMazeMenu()
 {
+	return 1;
 #if 0
 	int rows, columns, currentRow, block, thisBlock;
 	int status;
@@ -1224,7 +1225,9 @@ int main(int argc, char **argv)
 	glutInitWindowSize(800,600);
 	glutInitWindowPosition(0,0);
 	//glutCreateWindow("Project aMaze [ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]");
-	glutCreateWindow("Project aMaze [ Michiel Scholten | mbscholt@aquariusoft.org ]");
+	//glutCreateWindow("Project aMaze [ Michiel Scholten | mbscholt@aquariusoft.org ]");
+	glutCreateWindow("Project aMaze [ 2004-01-12 v0.2.02 | amaze@aquariusoft.org ]");
+
 
 	/* Background color of the screen - "the sky" */
 #ifdef FOG_ON
