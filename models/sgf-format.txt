@@ -1,0 +1,38 @@
+The sgf file format is very simple. It is an ASCII format, so use fscanf to read it.
+It consists of one or more sets of vertices. Each set starts with an identifier that 
+specifies how the following set of vertices should be connected. This identifier can 
+be any of the following: POINTS, LINES, LINE_STRIP, LINE_LOOP, TRIANGLES, QUADS, 
+TRIANGLE_STRIP, TRIANGLE_FAN, QUAD_STRIP or POLYGON. These correspond to the GL_* 
+constants used for glBegin(). All vertices following one POLYGON identifier are part 
+of a single convex polygon. 
+This identifier is followed by an integer 'n': the number of vertices defined for 
+this set. Then follow 'n' lines, each line containing 6 floating point numbers.
+The first 3 floats are vertex coordinates (x, y, z). The second set of 3 floats
+contains coordinates (x, y, z) of the normal vector for that vertex. 
+The set of vertices should be connected in order. If, for example, the identifier is
+'TRIANGLES', each set of 3 vertices+normals form one triangle in the object. In other 
+words:
+vertex 0 + vertex 1 + vertex 2 are the first triangle, 
+vertex 3 + vertex 4 + vertex 5 the second. 
+
+Each set is follwed by end of file (EOF) or by a new set with (possibly) a different 
+identifier.
+
+A file for a single triangle and a point would look like:
+
+TRIANGLES 3
+1.00000	0.00000	0.00000 0.00000 0.00000	1.00000
+0.00000	0.00000	0.00000 0.00000 0.00000	1.00000
+0.00000	1.00000	0.00000 0.00000 0.00000	1.00000
+POINTS 1
+1.00000 1.00000 0.00000	0.00000 0.00000 1.00000
+
+The triangle has 3 vertices (1, 0, 0), (0, 0, 0) and (0, 1, 0) all with the same normal 
+vector (0,0,1). The point is located at (1,1,0) and has the same normal vector as the 
+points from the triangle.
+
+NB:
+For the Computer Graphics exercises ALL drawing types (POINTS, LINES, LINE_STRIP, 
+LINE_LOOP, TRIANGLES, QUADS, TRIANGLE_STRIP, TRIANGLE_FAN, QUAD_STRIP and POLYGON) 
+should be supported, even if not all are required for the objects used in the 
+exercises. We wil test with other objects...

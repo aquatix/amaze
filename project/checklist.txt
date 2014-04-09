@@ -1,0 +1,21 @@
+Done		Choose dino/pony -> dino
+
+Done		Use the model(s) available in the models/dino/ and models/pony/  directories (use the .sgf loader from exercise 2).
+Pending		Build the model(s): combine the different body parts by translations, rotations, etc.
+Pending		Animate the model(s) in a simple manner (legs and arms should move, in a cycling manner, using some 'sin/cos' functions).
+Pending		Apply texture(s) to the model (you are allowed to use random texture coordinates. You may need to change your .sgf loader to support these random texture coordinates).
+Pending		Build a 'random' city (e.g. a set of boxes) onto a plane.
+Pending		Put a texture onto the buildings and the ground.
+Pending		Give the character a trajectory (line, circle, sinus function, data from a file, user control, etc.).
+Done		Put in a background color (e.g. sky blue).
+TODO		Make the viewpoint (camera) interactive: translation and rotation of the world, allowing an interactive walk through the scene.
+Pending		Add a light to the scene.
+Pending		Use the framework! Put files where they are supposed to be. If you use extra textures, put them in the texture/ directory. If you add .c or .h files, put them in your project/ directory. If you create your own models put, them in the models/ directory.
+TODO		Make the program stand alone! It is not sufficient if your program runs from Visual Studio. It should be able to run from the bin/ directory directly.
+TODO		Clean your project before submission. We will not accept submissions over 1 MB (or 2 MB if you use your own textures).
+Pending		Your program should use the timer functions for animation and space bar should pause and resume the application.
+
+Done		Add extra texture[s]: reptile skin for dino
+TODO		Add fog?
+Done		Add fps meter
+

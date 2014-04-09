@@ -1,23 +1,19 @@
 #include <GL/glut.h>
 #include <stdio.h>
-
+#include <math.h>
 #include <util/readtex.h>
-#if 0
-#include "../util/readtex.h"
-#include </home/mbscholt/mydocs/vu/20032004/cg/exercises/util/glutil.h>
-#include </home/mbscholt/xc_home/mydocs/vu/20032004/cg/exercises/util/glutil.h>
-#include "util/glutil.h"
-#endif
 
 /*
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-26
+ * Version 2003-11-28
  * Michiel Scholten [ mbscholt@cs.vu.nl | 1204467 ]
  */
 
+/* Displaylists */
 #define F16_MODEL 1
+
 /* Menu-entries */
 #define MNU_QUIT 4
 #define MNU_SMOOTH 5
@@ -27,9 +23,13 @@
 #define MNU_TEX_FULL 9
 #define MNU_TEX_COMP 10
 #define MNU_TEX_GRID 11
+#define MNU_TEXMODE_MOD 12
+#define MNU_TEXMODE_REP 13
+#define MNU_TEXMODE_OFF 14
 
-#define DEBUG
-#define INFO
+/* Switches for output to console */
+#define DEBUG_OFF
+#define INFO_OFF
 
 #ifdef DEBUG
 #define dprint printf
@@ -45,14 +45,24 @@
 #define iprint (void)
 #endif
 
+#define NUMBER_OF_TEXTURES 1
+
+/* Globally used variables */
 double time;
 int mousedown = 0;
 double theta_pyramid, theta_cube, theta_f16;
 int animate = 0;
+int texturesEnabled = 1;
 int pyr_x = 1;
 int pyr_y = 0;
 
-RGBImage *texture;
+RGBImage *pTexture;
+int textureId;
+double texRowX = 1.0;
+double texRowY = 1.0;
+double rowDivide = 0.0;
+
+float textureMode = GL_MODULATE;	// GL_REPLACE
 
 /* Define vertex */
 typedef GLfloat point3[3];
@@ -68,22 +78,25 @@ typedef struct
 
 
 ////////////////////////////////////// Pyramid settings >
+/* Vertices */
 point3 pyramid[5] =
 {
 	{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.0,-1.0,-1.0},	/* base */
 	{0.0, 1.0, 0.0}									/* top */
 };
 
+/* Material */
 Material_t pyramidMaterial =
 {
 	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialAmbient */
 	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialDiffuse */
 	{0.6f, 0.6f, 0.6f, 1.0f},	/* materialSpecular */
-	0				/* shininess */
+	20				/* shininess */
 };
 ////////////////////////////////////// Pyramid settings <
 
 ////////////////////////////////////// Cube settings >
+/* Vertices */
 point3 cube[8] =
 {
 	{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
@@ -91,22 +104,26 @@ point3 cube[8] =
 	{1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}
 };
 
+/* Material */
 Material_t cubeMaterial =
 {
 	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialAmbient */
 	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialDiffuse */ 
 	{0.3f, 0.3f, 0.3f, 1.0f},	/* materialSpecular */
-	0				/* shininess */
+	20				/* shininess */
 }; 
 ////////////////////////////////////// Cube settings <
 
-
+/* Colors used by the pyramid and cube */
 point3 colors[6] =
 {
 	{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 50.0, 0.0}, {0.0, 50.0, 50.0}, {50.0, 0.0, 50.0}
 };
 
+point3 specularLight = {.5, .5, .5};
+
 ////////////////////////////////////// Lights >
+#if 0
 const float LIGHT0_POS[] =  {-1.5f, 5.0f, -15.0f, 1.0f};
 const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
 const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
@@ -116,26 +133,37 @@ const float LIGHT1_POS[] =  {4.0f, -1.5f, -10.0f, 1.0f};
 const float LIGHT1_AMBIENT[] =  {0.6, 0.6f, 0.6f, 1.0f};
 const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
 const float LIGHT1_SPECULAR[] =  {0.8f, 0.4f, 0.4f, 1.0f};
-////////////////////////////////////// Lights <
+////
+const float LIGHT0_POS[] =  {-11.5f, 15.0f, -15.0f, 1.0f};
+const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
+const float LIGHT0_SPECULAR[] = {0.6f, 0.6f, 0.6f, 1.0f};
 
-#if 0
-/* Clear color */
-const GLfloat CLEAR_COLOR[4] = {0.5f, 0.85f, 1.0f, 1.0f};
+const float LIGHT1_POS[] =  {14.0f, -11.5f, -110.0f, 1.0f};
+const float LIGHT1_AMBIENT[] =  {0.6, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_SPECULAR[] =  {0.8f, 0.4f, 0.4f, 1.0f};
+////
+const float LIGHT0_POS[] =  {0.0f, 4.0f, 0.0f, 1.0f};
+const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
+const float LIGHT0_SPECULAR[] = {0.6f, 0.6f, 0.6f, 1.0f};
+
+const float LIGHT1_POS[] =  {4.0f, -1.5f, -10.0f, 1.0f};
+const float LIGHT1_AMBIENT[] =  {0.6f, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_SPECULAR[] =  {0.8f, 0.4f, 0.4f, 1.0f};
 #endif
+const float LIGHT0_POS[] =  {2.0f, 4.0f, 2.0f, 1.0f};
+const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
+const float LIGHT0_SPECULAR[] = {0.3f, 0.3f, 0.3f, 1.0f};
 
-void idle(void)
-{
-	/* Get the cpu loaded for 100% while updating continously :) | -> Not used in this exercise */
-//	glutPostRedisplay();
-}
-
-void setMaterial(Material_t *material, GLenum mode)
-{
-	glMaterialfv(mode, GL_AMBIENT, material->ambient);
-	glMaterialfv(mode, GL_DIFFUSE, material->diffuse);
-	glMaterialfv(mode, GL_SPECULAR, material->specular);
-	glMaterialf(mode, GL_SHININESS, material->shininess);
-}
+const float LIGHT1_POS[] =  {4.0f, -1.5f, 10.0f, 1.0f};
+const float LIGHT1_AMBIENT[] =  {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_SPECULAR[] =  {0.2f, 0.2f, 0.2f, 1.0f};
+////////////////////////////////////// Lights <
 
 ////////////////////////////////////// Rotating functions >
 void rotatePyramid(int value)
@@ -161,7 +189,7 @@ void rotateCube(int value)
 	if (animate)
 	{
 		/* Every 20msec, but only if user has enabled the animation with the spacebar */
-		theta_cube += 2;
+		theta_cube += 2; //was 2
 		if ( theta_cube >= 360.0 )
 		{
 			theta_cube -= 360.0;
@@ -187,170 +215,233 @@ void rotateF16(int value)
 }
 ////////////////////////////////////// Rotating functions <
 
+int calculateNormal(point3 t1, point3 t2, point3 t3, point3 normal)
+{
+	point3 v, v1, v2;
+	float l;
+
+	/*
+	 * v1 = t2 - t1
+	 * v2 = t3 - t1
+	 * 
+	 * v = v1 * v2
+	 * v = [vx, vy, vz], where
+	 *   vx = v1y * v2z - v1z * v2y
+	 *   vy = v1z * v2x - v1x * v2z
+	 *   vz = v1x * v2y - v1y * v2x
+	 *       _____________________________
+	 * l = \/ vx * vx + vy * vy + vz * vz
+	 */
+	v1[0] = t2[0] - t1[0];
+	v1[1] = t2[1] - t1[1];
+	v1[2] = t2[2] - t1[2];
+
+	v2[0] = t3[0] - t1[0];
+	v2[1] = t3[1] - t1[1];
+	v2[2] = t3[2] - t1[2];
+
+	v[0] = v1[1] * v2[2] - v1[2] * v2[1];
+	v[1] = v1[2] * v2[0] - v1[0] * v2[2];
+	v[2] = v1[0] * v2[1] - v1[1] * v2[0];
+
+	l = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	
+	normal[0] = v[0] / l;
+	normal[1] = v[1] / l;
+	normal[2] = v[2] / l;
+
+	//dprint("normalVector: %f %f %f \n", normal[0], normal[1], normal[2]);
+	return 1;
+}
+
 ////////////////////////////////////// Drawing >
 void drawPyramid()
 {
+	point3 normalVector;
 	/* We want a pyramid with a square base, every side a different colour */
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-	glEnable(GL_COLOR_MATERIAL);
-	setMaterial(&pyramidMaterial, GL_FRONT_AND_BACK);
+
+	/* Texture stuff */
+	if (texturesEnabled) glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
+	glBindTexture(GL_TEXTURE_2D, textureId);
 
 	/* Draw the square base */
+
+	/*
+	 * "Computer"
+	 * 0 1
+	 * 1 1
+	 * 1 .5
+	 * 0 .5
+	 *
+	 * "Computer
+	 * Graphics"
+	 * 0 1
+	 * 1 1
+	 * 1 0
+	 * 0 0 
+	 *
+	 * 4x2 grid
+	 * 0 2
+	 * 4 2
+	 * 4 0
+	 * 0 0
+	 */
+	
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(pyramid[0], pyramid[1], pyramid[2], normalVector);
+		glNormal3fv(normalVector);
+		glTexCoord2f(0.0, texRowY);
+		glVertex3fv(pyramid[0]);
+		glTexCoord2f(texRowX, texRowY);
+		glVertex3fv(pyramid[1]);
+		glTexCoord2f(texRowX, rowDivide);
+		glVertex3fv(pyramid[2]);
+		glTexCoord2f(0.0, rowDivide);
+		glVertex3fv(pyramid[3]);
+	glEnd();
+//	glDisable(GL_TEXTURE_2D);
+
+	/* Draw the 4 sides */
+	/* Front */
+	glBegin(GL_POLYGON);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[1]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(pyramid[0], pyramid[1], pyramid[4], normalVector);
+		glNormal3fv(normalVector);
 		glTexCoord2f(0.0, 0.0);
 		glVertex3fv(pyramid[0]);
 		glTexCoord2f(1.0, 0.0);
 		glVertex3fv(pyramid[1]);
 		glTexCoord2f(1.0, 1.0);
-		glVertex3fv(pyramid[2]);
-		glTexCoord2f(0.0, 1.0);
-		glVertex3fv(pyramid[3]);
+		glVertex3fv(pyramid[4]);
 	glEnd();
 
-	/* Draw the 4 sides */
+	/* Right */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[1]);
-		glVertex3fv(pyramid[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[2]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(pyramid[1], pyramid[2], pyramid[4], normalVector);
+		glNormal3fv(normalVector);
+		glTexCoord2f(0.0, 0.0);
 		glVertex3fv(pyramid[1]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	glBegin(GL_POLYGON);
-		glColor3fv(colors[2]);
-		glVertex3fv(pyramid[1]);
+		glTexCoord2f(1.0, 0.0);
 		glVertex3fv(pyramid[2]);
+		glTexCoord2f(1.0, 1.0);
 		glVertex3fv(pyramid[4]);
 	glEnd();
 
+	/* Back */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[3]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[3]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(pyramid[2], pyramid[3], pyramid[4], normalVector);
+		glNormal3fv(normalVector);
+		glTexCoord2f(0.0, 0.0);
 		glVertex3fv(pyramid[2]);
+		glTexCoord2f(1.0, 0.0);
 		glVertex3fv(pyramid[3]);
+		glTexCoord2f(1.0, 1.0);
 		glVertex3fv(pyramid[4]);
 	glEnd();
 
+	/* Left */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[4]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[4]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(pyramid[3], pyramid[0], pyramid[4], normalVector);
+		glNormal3fv(normalVector);
+		glTexCoord2f(0.0, 0.0);
 		glVertex3fv(pyramid[3]);
+		glTexCoord2f(1.0, 0.0);
 		glVertex3fv(pyramid[0]);
+		glTexCoord2f(1.0, 1.0);
 		glVertex3fv(pyramid[4]);
 	glEnd();
-	glDisable(GL_COLOR_MATERIAL);
 
+	glDisable(GL_TEXTURE_2D);
 	/* Done :) */
 }
 
 int drawCube()
 {
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-	glEnable(GL_COLOR_MATERIAL);
-	setMaterial(&cubeMaterial, GL_FRONT_AND_BACK);
+	point3 normalVector;
 
+	/* Bottom */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(cube[4], cube[5], cube[1], normalVector);
+		glNormal3fv(normalVector);
 		glVertex3fv(cube[4]);
 		glVertex3fv(cube[5]);
 		glVertex3fv(cube[1]);
 		glVertex3fv(cube[0]);
-		glNormal3f(0.5,0.5,0.5);
 	glEnd();
 
+	/* Front */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[1]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[1]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(cube[4], cube[5], cube[6], normalVector);
+		glNormal3fv(normalVector);
 		glVertex3fv(cube[4]);
 		glVertex3fv(cube[5]);
 		glVertex3fv(cube[6]);
 		glVertex3fv(cube[7]);
 	glEnd();
 
+	/* Top */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[2]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[2]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(cube[4], cube[5], cube[6], normalVector);
+		glNormal3fv(normalVector);
 		glVertex3fv(cube[6]);
 		glVertex3fv(cube[7]);
 		glVertex3fv(cube[3]);
 		glVertex3fv(cube[2]);
 	glEnd();
 
+	/* Back */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[3]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[3]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(cube[4], cube[5], cube[6], normalVector);
+		glNormal3fv(normalVector);
 		glVertex3fv(cube[2]);
 		glVertex3fv(cube[3]);
 		glVertex3fv(cube[0]);
 		glVertex3fv(cube[1]);
 	glEnd();
 
+	/* Right */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[4]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[4]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(cube[4], cube[5], cube[6], normalVector);
+		glNormal3fv(normalVector);
 		glVertex3fv(cube[5]);
 		glVertex3fv(cube[1]);
 		glVertex3fv(cube[2]);
 		glVertex3fv(cube[6]);
 	glEnd();
 
+	/* Left */
 	glBegin(GL_POLYGON);
-		glColor3fv(colors[5]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[5]);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
+		calculateNormal(cube[4], cube[5], cube[6], normalVector);
+		glNormal3fv(normalVector);
 		glVertex3fv(cube[4]);
 		glVertex3fv(cube[0]);
 		glVertex3fv(cube[3]);
 		glVertex3fv(cube[7]);
 	glEnd();
-	glDisable(GL_COLOR_MATERIAL);
+	return 1;
 }
-
-#if 0
-/*
-int drawSquare(point3 *vertices, point3 colors)
-*/
-int drawSquare(int a, int b, int c, int d)
-{
-	/* set the color of the square */
-	//glColor3ub(colors);
-	glColor3fv(colors);
-	/* now draw the square */
-/*
-printf("square\n");
-printf("vertex 0: %i\n", vertices[0]);
-printf("vertex 1: %i\n", vertices[1]);
-printf("vertex 2: %i\n", vertices[2]);
-printf("vertex 3: %i\n", vertices[3]);
-	glBegin(GL_QUADS);
-		glVertex3fv(vertices[0]);
-		glVertex3fv(vertices[1]);
-		glVertex3fv(vertices[2]);
-		glVertex3fv(vertices[3]);
-	glEnd();
-*/
-
-	glBegin(GL_QUADS);
-		;
-		glVertex3fv(vertices[1]);
-		glVertex3fv(vertices[2]);
-		glVertex3fv(vertices[3]);
-	glEnd();
-}
-
-int drawTriangle(point3 *vertices, point3 colors)
-{
-	/* set the color of the square */
-	glColor3fv(colors);
-	/* now draw the triangle */
-	/*
-	glPushMatrix();
-	glBegin(GL_POLYGON);
-		glVertex3fv(vertices[0]);
-		glVertex3fv(vertices[1]);
-		glVertex3fv(vertices[2]);
-	glEnd();
-	glPopMatrix();
-	*/
-	glBegin(GL_POLYGON);
-		glVertex3fv(vertices[0]);
-		glVertex3fv(vertices[1]);
-		glVertex3fv(vertices[2]);
-	glEnd();
-}
-#endif
 
 void display(void)
 {
@@ -384,10 +475,8 @@ void display(void)
 
 		/* F16 > */
 		glPushMatrix();
-			//glTranslatef(1.0f, 0.0f, 3.0f);
 			glRotatef(-theta_f16, 0.0, 1.0, 0.0);
 			glTranslatef(0.0f, 0.0f, 5.0f);
-			//glRotatef(theta_f16, 0.0, 1.5, 0);
 			glRotatef(-90, 0.0, 1.0, 0.0);
 			glScaled(2.0,2.0,2.0);
 			//drawCube();
@@ -408,23 +497,8 @@ void reshape_now(GLsizei w, GLsizei h)
 	fflush(stdout);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-0.3, 0.3, -whRatio * 0.3 ,whRatio * 0.3 ,0.3 ,100);
+	glFrustum(-0.3, 0.3, -whRatio * 0.3, whRatio * 0.3, 0.3, 100);
 	glMatrixMode(GL_MODELVIEW);
-#if 0
-	/* adjust clipping box *//*
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(45.0, w/h, 2.0, 40.0);
-	glMatrixMode(GL_MODELVIEW);*/
-	/* adjust viewport and draw the picture */
-	if (h < w)
-	{
-		glViewport( w / 2 - h / 2, 0, h, h);
-	} else
-	{
-		glViewport( 0, h / 2 - w / 2, w, w);
-	}
-#endif
 }
 ////////////////////////////////////// Drawing <
 
@@ -458,8 +532,6 @@ int loadModel(char *filename)
 			iprint("ERROR @ loadModel :: Reading of identifier and number failed!\n");
 			return 0;
 		}
-
-		glEnable(GL_COLOR_MATERIAL);
 
 		/* 
 		 * Look which kind of figure we have to draw and start the figure
@@ -499,11 +571,9 @@ int loadModel(char *filename)
 		{
 			/* Return an error, or at least a -1 */
 			iprint("ERROR @ loadModel :: unknown identifier!\n");
-			glDisable(GL_COLOR_MATERIAL);	/* Just to be sure */
 			return -1;
 		}
 		/* Load vertices and draw the thing */
-		//glColor3fv(colors[0]);
 		for (vertex = 0; vertex < nrVertices; vertex++)
 		{
 			fscanf(in, " %f %f %f %f %f %f\n", &vertex_x, &vertex_y, &vertex_z, &normal_x, &normal_y, &normal_z);
@@ -511,7 +581,6 @@ int loadModel(char *filename)
 			glVertex3f(vertex_x, vertex_y, vertex_z);
 		}
 		glEnd();	/* Done with this figure */
-		glDisable(GL_COLOR_MATERIAL);
 	}
 	iprint("done\n");
 	return 1;
@@ -519,9 +588,20 @@ int loadModel(char *filename)
 
 int loadTextures()
 {
-//	LoadRGB("../textures/text.rgb");
-	texture = LoadRGB("../textures/text.rgb");	
+	pTexture = LoadRGB("../textures/reptile.rgb");
+	glGenTextures(NUMBER_OF_TEXTURES, &textureId);
+	glBindTexture(GL_TEXTURE_2D, textureId);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// wrap horizontally
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);	// wrap vertically
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	
+	//target, level, components, width, height, border, format, type, *pixels
+	glTexImage2D(GL_TEXTURE_2D, 0, pTexture->components, pTexture->sizeX, pTexture->sizeY, 0,  pTexture->format, GL_UNSIGNED_BYTE, pTexture->data);
+
 	iprint("Texture \"../textures/text.rgb\" loaded\n");
+	return 1;
 }
 ////////////////////////////////////// Loading stuff <
 
@@ -572,49 +652,70 @@ void mouse(int btn, int btn_state, int x, int y)
 
 void handle_menu(int whichone)
 {
+	/* Handle the selected item */
 	switch (whichone)
 	{
 		case 1: /* item 1 */
-			printf("menu :: entry 1\n");
+			iprint("menu :: entry 1\n");
 			break;
 		case 2: /* item 2 */
-			printf("menu :: entry 2\n");
+			iprint("menu :: entry 2\n");
 			break;
 		case 3: /* item 3 */
-			printf("menu :: entry 3\n");
+			iprint("menu :: entry 3\n");
 			break;
 		case MNU_FLAT:
-			dprint("doing flat shading\n");
+			iprint("doing flat shading\n");
 			glShadeModel(GL_FLAT);
 			break;
 		case MNU_SMOOTH:
-			dprint("doing smooth shading\n");
+			iprint("doing smooth shading\n");
 			glShadeModel(GL_SMOOTH);
 			break;
 		case MNU_VER:
-			dprint("doing vertical rotation of pyramid\n");
+			iprint("doing vertical rotation of pyramid\n");
 			pyr_x = 1;
 			pyr_y = 0;
 			break;
 		case MNU_HOR:
-			dprint("doing horizontal rotation of pyramid\n");
+			iprint("doing horizontal rotation of pyramid\n");
 			pyr_x = 0;
 			pyr_y = 1;
 			break;
 		case MNU_TEX_FULL:
-			dprint("using full texture\n");
-			/**/
+			iprint("using full texture\n");
+			texRowX = 1.0;
+			texRowY = 1.0;
+			rowDivide = 0.0;
 			break;
 		case MNU_TEX_COMP:
-			dprint("using half texture [only \"computer\"]\n");
-			/**/
+			iprint("using half texture [only \"computer\"]\n");
+			texRowX = 1.0;
+			texRowY = 1.0;
+			rowDivide = 0.5;
 			break;
 		case MNU_TEX_GRID:
-			dprint("using texture grid [4x2]\n");
-			/**/
+			iprint("using texture grid [4x2]\n");
+			texRowX = 4.0;
+			texRowY = 2.0;
+			rowDivide = 0.0;
+			break;
+		case MNU_TEXMODE_MOD:
+			iprint("using texture mode modulate\n");
+			texturesEnabled = 1;
+			textureMode = GL_MODULATE;
+			break;
+		case MNU_TEXMODE_REP:
+			iprint("using texture mode replace\n");
+			texturesEnabled = 1;
+			textureMode = GL_REPLACE;
+			break;
+		case MNU_TEXMODE_OFF:
+			iprint("using no textures\n");
+			texturesEnabled = 0;
 			break;
 		case MNU_QUIT:
-			printf("menu :: quit entry chosen, exiting\n");
+			iprint("menu :: quit entry chosen, exiting\n");
 			exit(0);
 			break;
 	}
@@ -627,7 +728,7 @@ int main(int argc, char **argv)
 {
 	char f16_files[8][40]= {"../models/f-16/afterburner.sgf", "../models/f-16/body.sgf", "../models/f-16/bomb.sgf", "../models/f-16/cockpit.sgf",
 		"../models/f-16/rockets.sgf", "../models/f-16/tailfin.sgf", "../models/f-16/tailwings.sgf", "../models/f-16/wings.sgf"};
-	int i, submenu_shading, submenu_rotation, submenu_textures;
+	int i, submenu_shading, submenu_rotation, submenu_textures, submenu_texmode;
 			
 	/* initialize glut and the window */
 	glutInit(&argc, argv);
@@ -637,20 +738,37 @@ int main(int argc, char **argv)
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("Exercise 2 [Solar system | mbscholt@cs.vu.nl | 1204467]");
 
+	/* Background color of the screen - "the sky" */
 	//glClearColor(0.0, 0.0, 0.5, 1.0);
-	glClearColor(0.0, 0.5, 0.9, 1.0);
+	glClearColor(0.0f, 0.5f, 0.9f, 1.0f);
 
 	glEnable(GL_DEPTH_TEST);
+	glShadeModel(GL_SMOOTH);
+	//glEnable(GL_CULL_FACE);
+
+	//glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, GL_LIGHT_MODEL_AMBIENT);
+	
+	/* Light related settings */
+	glLightfv(GL_LIGHT0, GL_POSITION, LIGHT0_POS);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, LIGHT0_AMBIENT);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, LIGHT0_DIFFUSE);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, LIGHT0_SPECULAR);
+
+	glLightfv(GL_LIGHT1, GL_POSITION, LIGHT1_POS);
+	glLightfv(GL_LIGHT1, GL_AMBIENT, LIGHT1_AMBIENT);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, LIGHT1_DIFFUSE);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, LIGHT1_SPECULAR);
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHT1);
+	glLightModelf( GL_LIGHT_MODEL_TWO_SIDE, 1.0 );
 	//glEnable(GL_COLOR_MATERIAL);
-	glShadeModel(GL_SMOOTH);
+	//glShadeModel(GL_SMOOTH);
+	//glDepthFunc(GL_LEQUAL);
 	
 	/* set various event callback functions */
 	glutReshapeFunc(reshape_now);
-//	glutIdleFunc(idle);
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
@@ -672,14 +790,20 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("computer",MNU_TEX_COMP);
 	glutAddMenuEntry("grid",MNU_TEX_GRID);
 
+	submenu_texmode = glutCreateMenu(handle_menu);
+	glutAddMenuEntry("modulate",MNU_TEXMODE_MOD);
+	glutAddMenuEntry("replace",MNU_TEXMODE_REP);
+	glutAddMenuEntry("off",MNU_TEXMODE_OFF);
+
 	glutCreateMenu(handle_menu);
 	glutAddMenuEntry("menuentry 1", 1);
 	glutAddMenuEntry("menuentry 2", 2);
 	glutAddMenuEntry("menuentry 3", 3);
 //	glutAddMenuEntry("-", 0);
-	glutAddSubMenu("shading",submenu_shading);
-	glutAddSubMenu("rotationtype",submenu_rotation);
-	glutAddSubMenu("textures",submenu_textures);
+	glutAddSubMenu("shading", submenu_shading);
+	glutAddSubMenu("rotationtype", submenu_rotation);
+	glutAddSubMenu("textures", submenu_textures);
+	glutAddSubMenu("texture mode", submenu_texmode);
 //	glutAddMenuEntry("-", 0);
 	glutAddMenuEntry("quit [q, esc]", MNU_QUIT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
@@ -689,11 +813,16 @@ int main(int argc, char **argv)
 	for (i = 0; i < 8; i++)
 	{
 		/* Default color [some shade of gray */
-		glColor3f(.75, .5, .5);
+		point3 theColor = { .75, .5, .5};
+
+		if (strcmp("../models/f-16/cockpit.sgf", f16_files[i]) == 0) { theColor[0] = .0f;theColor[1] = .0f; theColor[2] = .7f; };
+		if (strcmp("../models/f-16/rockets.sgf", f16_files[i]) == 0) { theColor[0] = 1.0f;theColor[1] = .0f; theColor[2] = .0f; };
+		if (strcmp("../models/f-16/bomb.sgf", f16_files[i]) == 0) { theColor[0] = .0f;theColor[1] = 1.0f; theColor[2] = .0f; };
+		if (strcmp("../models/f-16/afterburner.sgf", f16_files[i]) == 0) { theColor[0] = .5f;theColor[1] = .25f; theColor[2] = .25f; };
+
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, theColor);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
 		/* Use some custom colors for various parts */
-		if (strcmp("../models/f-16/cockpit.sgf", f16_files[i]) == 0) glColor3f(.0, .0, .7);
-		if (strcmp("../models/f-16/rockets.sgf", f16_files[i]) == 0) glColor3f(1.0, .0, .0);
-		if (strcmp("../models/f-16/bomb.sgf", f16_files[i]) == 0) glColor3f(.0, 1.0, .0);
 		if (loadModel(f16_files[i]) == 0)
 		{
 			printf("ERROR while loading %s\n", f16_files[i]);
