@@ -44,6 +44,9 @@ typedef enum
 #define iprint (void)
 #endif
 
+/*** Maze ***/
+#define FILE_MAZE "maze.fil"
+
 /*** Texture defining stuff ***/
 #define NUMBER_OF_TEXTURES 1
 
@@ -327,9 +330,38 @@ void drawBase()
 #endif
 }
 
-void loadNDrawMaze()
+int loadNDrawMaze()
 {
 	/* Load the maze datafile and draw it [ -> will be loaded into the world displaylist ] */
+	int vertex, nrVertices;
+	char identifier[20]; // string of maxlen 20
+	GLfloat vertex_x, vertex_y, vertex_z, normal_x, normal_y, normal_z;
+	int status;
+	FILE *in;
+	
+	/* Texture stuff */
+	glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
+	glBindTexture(GL_TEXTURE_2D, texture_wall);
+
+	iprint("Loading maze from \"%s\" ... \n", FILE_MAZE);
+	if ((in = fopen(FILE_MAZE, "r")) == NULL)
+	{
+		iprint("Unable to open the file [file: %s]\n", FILE_MAZE);
+		return 0;
+	}
+	/* Load stuff */
+	while (!feof(in))
+	{
+		status = fscanf(in, " %s %i \n", &identifier, &nrVertices);
+		dprint(" - read type %s, nr of vertices is %i\n", identifier, nrVertices);
+
+		if (status == EOF)
+		{
+			//
+		}
+	}
+	return 1;
 }
 
 void drawPlayer()
@@ -350,28 +382,6 @@ void drawPyramid()
 	glBindTexture(GL_TEXTURE_2D, textureId);
 
 	/* Draw the square base */
-
-	/*
-	 * "Computer"
-	 * 0 1
-	 * 1 1
-	 * 1 .5
-	 * 0 .5
-	 *
-	 * "Computer
-	 * Graphics"
-	 * 0 1
-	 * 1 1
-	 * 1 0
-	 * 0 0 
-	 *
-	 * 4x2 grid
-	 * 0 2
-	 * 4 2
-	 * 4 0
-	 * 0 0
-	 */
-	
 	glBegin(GL_POLYGON);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
@@ -448,91 +458,13 @@ void drawPyramid()
 	glDisable(GL_TEXTURE_2D);
 	/* Done :) */
 }
-
-int drawCube()
-{
-	point3 normalVector;
-
-	/* Bottom */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(cube[4], cube[5], cube[1], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(cube[4]);
-		glVertex3fv(cube[5]);
-		glVertex3fv(cube[1]);
-		glVertex3fv(cube[0]);
-	glEnd();
-
-	/* Front */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[1]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(cube[4], cube[5], cube[6], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(cube[4]);
-		glVertex3fv(cube[5]);
-		glVertex3fv(cube[6]);
-		glVertex3fv(cube[7]);
-	glEnd();
-
-	/* Top */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[2]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(cube[4], cube[5], cube[6], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(cube[6]);
-		glVertex3fv(cube[7]);
-		glVertex3fv(cube[3]);
-		glVertex3fv(cube[2]);
-	glEnd();
-
-	/* Back */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[3]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(cube[4], cube[5], cube[6], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(cube[2]);
-		glVertex3fv(cube[3]);
-		glVertex3fv(cube[0]);
-		glVertex3fv(cube[1]);
-	glEnd();
-
-	/* Right */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[4]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(cube[4], cube[5], cube[6], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(cube[5]);
-		glVertex3fv(cube[1]);
-		glVertex3fv(cube[2]);
-		glVertex3fv(cube[6]);
-	glEnd();
-
-	/* Left */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[5]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(cube[4], cube[5], cube[6], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(cube[4]);
-		glVertex3fv(cube[0]);
-		glVertex3fv(cube[3]);
-		glVertex3fv(cube[7]);
-	glEnd();
-	return 1;
-}
 #endif
 
 void renderScene(void)
 {
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+#if 0
 	/* FPS stuff */
 	frame++;
 	time=glutGet(GLUT_ELAPSED_TIME);
@@ -551,7 +483,7 @@ void renderScene(void)
 	renderBitmapString(30,35,(void *)font,s);
 	glPopMatrix();
 	resetPerspectiveProjection();
-
+#endif
 	drawBase();
 	
 	glutSwapBuffers();
