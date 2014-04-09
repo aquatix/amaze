@@ -9,28 +9,36 @@
  *
  * Michiel Scholten [ mbscholt@cs.vu.nl | 1204467 ]
  */
-#define VERSION "2004-01-08 v0.0.06"
+#define VERSION "2004-01-11 v0.1.11"
 #define PROGINFO "[ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]"
 
 /*** Displaylists ***/
 typedef enum
 {
-	MODEL_PLAYER, MODEL_WORLD
+	MODEL_BOGUS, MODEL_PLAYER_ARM, MODEL_PLAYER_LEG, MODEL_PLAYER_BODY, MODEL_PLAYER_EYE, MODEL_WORLD
 } displaylists;
 
 /*** Menu-entries ***/
+#if 0
 typedef enum
 {
-	MNU_NONE, MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_VER, MNU_HOR, MNU_TEX_FULL, MNU_TEX_COMP,
+	MNU_NONE, MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_CHEATON, MNU_CHEATOFF, MNU_TEX_FULL, MNU_TEX_COMP,
 	MNU_TEX_GRID, MNU_TEXMODE_MOD, MNU_TEXMODE_REP, MNU_TEXMODE_OFF,
 	MNU_BOGUS_1, MNU_BOGUS_2, MNU_BOGUS_3
 } menus;
+#endif
+typedef enum
+{
+	MNU_NONE, MNU_QUIT, MNU_SMOOTH, MNU_FLAT, MNU_CHEATON, MNU_CHEATOFF
+} menus;
 
 /*** Switches for output to console ***/
-#define DEBUG
-#define INFO
+#define DEBUG_OFF
+#define INFO_OFF
+#define MAZEDEBUG_OFF
 
-#define FOG_OFF
+#define FPS_ON
+#define FOG_ON
 
 #ifdef DEBUG
 #define dprint printf
@@ -79,40 +87,34 @@ typedef enum
 int frame=0,time,timebase=0;
 int font=(int)GLUT_BITMAP_8_BY_13;
 char s[30];
-//char s[100];
 
 /* Variables about the world */
 double window_h=0, window_w=0;
 
 int world_h=0, world_w=0;
-GLfloat zoomlevel = 10.0;
-GLfloat world_leftright = 0.0f, world_forthback=0.0f;
+GLfloat zoomlevel = 5.0;
+GLfloat world_leftright = 0.0f, world_forthback = 0.0f, world_rotation = 0.0f;
 int mazeArray[100][100];	//ugly hack, because now it's always 100 big [lots of memory] and can't be bigger
 
 /* About the player */
 GLfloat player_x = 0.0, player_y=1.0;
+typedef enum
+{
+	view_left, view_right, view_back, view_forth
+} viewdirections;
+int viewdirection = view_left;
 
-#if 0
-double time;
-double theta_pyramid, theta_cube, theta_f16;
-#endif
+GLfloat theta = 0;
+int limbback = 0;
 
 /* Switchers for animation and stuff */
-int mousedown = 0;
 int animate = 1;
 int texturesEnabled = 1;
 
-/*
-int pyr_x = 1;
-int pyr_y = 0;
-*/
-
-
-double texRowX = 1.0;
-double texRowY = 1.0;
-double rowDivide = 0.0;
-
-float textureMode = GL_MODULATE;	// GL_REPLACE
+int cheating = 0;
+#if 1
+float textureMode = GL_MODULATE;
+#endif
 #if 0
 float textureMode = GL_REPLACE;
 #endif
@@ -131,67 +133,49 @@ typedef struct
 
 
 ////////////////////////////////////// FPS display >
+#ifdef FPS_ON
 void setOrthographicProjection()
 {
-        // switch to projection mode
-        glMatrixMode(GL_PROJECTION);
-        // save previous matrix which contains the 
-        //settings for the perspective projection
-        glPushMatrix();
-        // reset matrix
-        glLoadIdentity();
-        // set a 2D orthographic projection
-        gluOrtho2D(0, window_w, 0, window_h);
-        // invert the y axis, down is positive
-        glScalef(1, -1, 1); 
-        // mover the origin from the bottom left corner
-        // to the upper left corner
-        glTranslatef(0, -window_h, 0); 
-        glMatrixMode(GL_MODELVIEW);
+	// switch to projection mode
+	glMatrixMode(GL_PROJECTION);
+	// save previous matrix which contains the 
+	//settings for the perspective projection
+	glPushMatrix();
+	// reset matrix
+	glLoadIdentity();
+	// set a 2D orthographic projection
+	gluOrtho2D(0, window_w, 0, window_h);
+	// invert the y axis, down is positive
+	glScalef(1, -1, 1); 
+	// mover the origin from the bottom left corner
+	// to the upper left corner
+	glTranslatef(0, -window_h, 0); 
+	glMatrixMode(GL_MODELVIEW);
 }
 
 void resetPerspectiveProjection()
 {
-        // set the current matrix to GL_PROJECTION
-        glMatrixMode(GL_PROJECTION);
-        // restore previous settings
-        glPopMatrix();
-        // get back to GL_MODELVIEW matrix
-        glMatrixMode(GL_MODELVIEW);
+	// set the current matrix to GL_PROJECTION
+	glMatrixMode(GL_PROJECTION);
+	// restore previous settings
+	glPopMatrix();
+	// get back to GL_MODELVIEW matrix
+	glMatrixMode(GL_MODELVIEW);
 }
 
 void renderBitmapString(float x, float y, void *font,char *string)
-{
-  
-  char *c;
-  // set position to start drawing fonts
-  glRasterPos2f(x, y);
-  // loop all the characters in the string
-  for (c=string; *c != '\0'; c++) {
-    glutBitmapCharacter(font, *c);
-  }
+{ 
+	char *c;
+	// set position to start drawing fonts
+	glRasterPos2f(x, y);
+	// loop all the characters in the string
+	for (c=string; *c != '\0'; c++)
+	{
+		glutBitmapCharacter(font, *c);
+	}
 }
+#endif
 ////////////////////////////////////// FPS display <
-
-
-#if 1
-////////////////////////////////////// Pyramid settings >
-/* Vertices */
-point3 pyramid[5] =
-{
-	{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.0,-1.0,-1.0},	/* base */
-	{0.0, 1.0, 0.0}									/* top */
-};
-
-/* Material */
-Material_t pyramidMaterial =
-{
-	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialAmbient */
-	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialDiffuse */
-	{0.6f, 0.6f, 0.6f, 1.0f},	/* materialSpecular */
-	20				/* shininess */
-};
-////////////////////////////////////// Pyramid settings <
 
 ////////////////////////////////////// Cube settings >
 /* Vertices */
@@ -212,22 +196,18 @@ Material_t cubeMaterial =
 }; 
 ////////////////////////////////////// Cube settings <
 
-/* Colors used by the pyramid and cube */
-#if 0
-point3 colors[6] =
-{
-	{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 50.0, 0.0}, {0.0, 50.0, 50.0}, {50.0, 0.0, 50.0}
-};
-#endif
+/* Colors used by the cubes */
 point3 colors[6] =
 {
 	{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}
 };
 
-point3 specularLight = {.5, .5, .5};
-#endif
+//point3 specularLight = {.5f, .5f, .5f};
+point3 specularLight = {.8f, .8f, .8f};
+
 ////////////////////////////////////// Lights >
-const float LIGHT0_POS[] =  {2.0f, 14.0f, 2.0f, 1.0f};
+#if 0
+const float LIGHT0_POS[] =  {2.0f, 4.0f, 2.0f, 1.0f};
 const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
 const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};
 const float LIGHT0_SPECULAR[] = {0.3f, 0.3f, 0.3f, 1.0f};
@@ -236,59 +216,40 @@ const float LIGHT1_POS[] =  {4.0f, -1.5f, 10.0f, 1.0f};
 const float LIGHT1_AMBIENT[] =  {0.2f, 0.2f, 0.2f, 1.0f};
 const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
 const float LIGHT1_SPECULAR[] =  {0.2f, 0.2f, 0.2f, 1.0f};
+#endif
+const float LIGHT0_POS[] =  {0.0f, 8.0f, 0.0f, 1.0f};
+const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT0_SPECULAR[] = {0.3f, 0.3f, 0.3f, 1.0f};
+
+const float LIGHT1_POS[] =  {14.0f, -1.5f, 1.0f, 1.0f};
+const float LIGHT1_AMBIENT[] =  {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_SPECULAR[] =  {0.2f, 0.2f, 0.2f, 1.0f};
 ////////////////////////////////////// Lights <
 
-#if 0
 ////////////////////////////////////// Rotating functions >
-void rotatePyramid(int value)
+void rotateFunction(int value)
 {
-	if (mousedown && animate)
+	if (animate)
 	{
 		/*
 		 * Every 30msec, but only if the left mouse button is pushed and animation is enabled by user.
 		 * Rotating once every 3sec
 		 */
-		theta_pyramid += 3.6;
-		if ( theta_pyramid >= 360.0 )
+		if (limbback)
 		{
-			theta_pyramid -= 360.0;
-		}
-		glutTimerFunc(30, rotatePyramid, 1);
-		glutPostRedisplay();
-	}
-}
-
-void rotateCube(int value)
-{
-	if (animate)
-	{
-		/* Every 20msec, but only if user has enabled the animation with the spacebar */
-		theta_cube += 2; //was 2
-		if ( theta_cube >= 360.0 )
+			theta -= 3.0f;
+			if (theta < -20) limbback = 0;
+		} else
 		{
-			theta_cube -= 360.0;
+			theta += 3.0f;
+			if (theta > 20) limbback = 1;
 		}
-		glutTimerFunc(20, rotateCube, 1);
-		glutPostRedisplay();
-	}
-}
-
-void rotatePlayer(int value)
-{
-	if (animate)
-	{
-		/* Every 10msec, but only if user has enabled the animation with the spacebar */
-		theta_f16 += 4;
-		if ( theta_f16 >= 360.0 )
-		{
-			theta_f16 -= 360.0;
-		}
-		glutTimerFunc(10, rotatePlayer, 1);
-		glutPostRedisplay();
+		glutTimerFunc(30, rotateFunction, 1);
 	}
 }
 ////////////////////////////////////// Rotating functions <
-#endif
 
 /*** Function for calculating a normal vector ***/
 int calculateNormal(point3 t1, point3 t2, point3 t3, point3 normal)
@@ -331,172 +292,6 @@ int calculateNormal(point3 t1, point3 t2, point3 t3, point3 normal)
 }
 
 ////////////////////////////////////// Drawing >
-/*** Draw the base of the world ***/
-int drawBase(int rows, int columns)
-{
-	/* Texture stuff */
-	if (texturesEnabled) glEnable(GL_TEXTURE_2D);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
-	glBindTexture(GL_TEXTURE_2D, texture_ground);
-
-	/* TODO: add texture [texture_ground] */
-	iprint("Drawing base width size of %i x %i\n", rows, columns);
-	/* So, draw a nice square: */
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 1.0 * columns);
-		glVertex3f(-rows*0.5f, 0.0f, -columns*0.5f);
-		glTexCoord2f(1.0*rows, 1.0 * columns);
-		glVertex3f(-rows*0.5f, 0.0f,  columns*0.5f);
-		glTexCoord2f(1.0*rows, 0.0);
-		glVertex3f( rows*0.5f, 0.0f,  columns*0.5f);
-		glTexCoord2f(0.0, 0.0);
-		glVertex3f( rows*0.5f, 0.0f, -columns*0.5f);
-		//glScaled(0.5,0.5,0.5);	//because we use sizes from -columns to columns, instead of half ones
-	glEnd();
-	glDisable(GL_TEXTURE_2D);
-#if 0
-	glColor3f(0.9f, 0.9f, 0.9f);
-	glBegin(GL_QUADS);
-		glVertex3f(-100.0f, 0.0f, -100.0f);
-		glVertex3f(-100.0f, 0.0f,  100.0f);
-		glVertex3f( 100.0f, 0.0f,  100.0f);
-		glVertex3f( 100.0f, 0.0f, -100.0f);
-	glEnd();
-#endif
-
-	return 1;	
-#if 0
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[0], pyramid[1], pyramid[2], normalVector);
-		glNormal3fv(normalVector);
-		glTexCoord2f(0.0, texRowY);
-		glVertex3fv(pyramid[0]);
-		glTexCoord2f(texRowX, texRowY);
-		glVertex3fv(pyramid[1]);
-		glTexCoord2f(texRowX, rowDivide);
-		glVertex3fv(pyramid[2]);
-		glTexCoord2f(0.0, rowDivide);
-		glVertex3fv(pyramid[3]);
-	glEnd();
-#endif
-}
-
-/*** Load the maze datafile and draw it [ -> will be loaded into the world displaylist ] ***/
-int loadNDrawMaze()
-{
-	int rows, columns, currentRow, block, thisBlock;
-//	GLfloat vertex_x, vertex_y, vertex_z, normal_x, normal_y, normal_z;
-	int status;
-	char filename[255];
-	FILE *in;
-	int i,j;
-#if 0
-	/* Texture stuff */
-	glEnable(GL_TEXTURE_2D);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
-	glBindTexture(GL_TEXTURE_2D, texture_wall);
-#endif
-	filename[0] = '\0';
-	strcat(filename, FILE_MAZE_BASEDIR);
-	strcat(filename, FILE_MAZE);
-	    
-	iprint("Loading maze from \"%s\" ... \n", filename);
-	if ((in = fopen(filename, "r")) == NULL)
-	{
-		iprint("Unable to open the file [file: %s]\n", filename);
-		return 0;
-	}
-//return 1;
-	/* Load stuff */
-	while (!feof(in)) // <- obsolete
-	{
-		status = fscanf(in, " %i %i \n", &rows, &columns);
-		dprint("Maze has dimensions %i x %i\n", rows, columns);
-
-		glPushMatrix();
-			if (drawBase(rows, columns) < 1)
-			{
-				return 0;
-			}
-		glPopMatrix();
-
-		//createMazeArray(rows, columns);
-
-		if (status == EOF)
-		{
-			return EOF;
-		}
-		if (status < 2)
-		{
-			iprint("ERROR @ loadNDrawMaze :: Reading of dimensions failed!\n");
-			return 0;
-		}
-
-		world_h = rows;
-		world_w = columns;
-		iprint("world_h:%i world_w:%i\n",world_h, world_w);
-		
-		/* Load vertices and draw the thing */
-		for (currentRow = 0; currentRow < rows; currentRow++)
-		{
-			for (block = 0; block < columns; block++)
-			{
-				fscanf(in, " %i ", &thisBlock);
-				if (thisBlock == 1)
-				{
-					dprint("W");
-					mazeArray[block][currentRow] = 1;
-					glPushMatrix();
-						//glRotatef(theta_cube, 0.5, 1, 0);	/* Some nice rotation */
-						//glRotatef(theta_cube, 1, 0, 0);		/* Rotation around x-axis [as stated on website */
-
-						//glTranslatef(0.0f, 0.0f, 10.0f);
-						/*** Transpose the blocks to the right spots ***/
-						glTranslatef(block - (columns*0.5)+0.5, 0.5f, currentRow - (rows*0.5)+0.5);
-						/* Now make it a 1x1 unit [cube is 2x2x2] */
-						glScaled(0.5,0.5,0.5);
-						drawCube(texture_wall);
-					glPopMatrix();
-
-				} else
-				{
-					mazeArray[block][currentRow] = 0;
-					dprint(" ");
-					//skip -> passage
-				}
-			}
-			fscanf(in, " \n");
-			dprint("\n");
-		}
-	}
-	for (i = 0; i < world_h; i++)
-	{
-		for (j = 0; j<world_w; j++)
-		{
-			dprint("[%i][%i]=%i ", i, j, mazeArray[i][j]);
-		}
-		dprint("\n");
-	}
-	
-	return 1;
-}
-#if 0
-int createMazeArray(int rows, int cols)
-{
-	static int mazeArray[rows][cols];
-}
-#endif
-
-/*** Draw the player, default is the dino -> not customizable ***/
-int drawPlayer()
-{
-	glScaled(0.2,0.2,0.2);
-	drawCube(texture_reptile);
-	return 1;
-}
-
 /*** Function to draw a cube, used for building the maze, which kinda exists out of cubes ***/
 int drawCube(int texture)
 {
@@ -606,159 +401,197 @@ int drawCube(int texture)
 	return 1;
 }
 
-void drawPyramid()
+/*** Draw the base of the world ***/
+int drawBase(int rows, int columns)
 {
-	point3 normalVector;
-	/* Draw the square base */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[0], pyramid[1], pyramid[2], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(pyramid[0]);
-		glVertex3fv(pyramid[1]);
-		glVertex3fv(pyramid[2]);
-		glVertex3fv(pyramid[3]);
-	glEnd();
-
-	/* Draw the 4 sides */
-	/* Front */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[1]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[0], pyramid[1], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(pyramid[0]);
-		glVertex3fv(pyramid[1]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	/* Right */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[2]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[1], pyramid[2], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(pyramid[1]);
-		glVertex3fv(pyramid[2]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	/* Back */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[3]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[2], pyramid[3], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(pyramid[2]);
-		glVertex3fv(pyramid[3]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	/* Left */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[4]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[3], pyramid[0], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
-		glVertex3fv(pyramid[3]);
-		glVertex3fv(pyramid[0]);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-}
-
-#if 0
-void drawPyramid()
-{
-	point3 normalVector;
-	/* We want a pyramid with a square base, every side a different colour */
-
 	/* Texture stuff */
 	if (texturesEnabled) glEnable(GL_TEXTURE_2D);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
-	glBindTexture(GL_TEXTURE_2D, textureId);
+	glBindTexture(GL_TEXTURE_2D, texture_ground);
 
-	/* Draw the square base */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[0]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[0], pyramid[1], pyramid[2], normalVector);
-		glNormal3fv(normalVector);
-		glTexCoord2f(0.0, texRowY);
-		glVertex3fv(pyramid[0]);
-		glTexCoord2f(texRowX, texRowY);
-		glVertex3fv(pyramid[1]);
-		glTexCoord2f(texRowX, rowDivide);
-		glVertex3fv(pyramid[2]);
-		glTexCoord2f(0.0, rowDivide);
-		glVertex3fv(pyramid[3]);
-	glEnd();
-//	glDisable(GL_TEXTURE_2D);
-
-	/* Draw the 4 sides */
-	/* Front */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[1]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[0], pyramid[1], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
+	iprint("Drawing base width size of %i x %i\n", rows, columns);
+	/* So, draw a nice square: */
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 1.0 * columns);
+		glVertex3f(-rows*0.5f, 0.0f, -columns*0.5f);
+		glTexCoord2f(1.0*rows, 1.0 * columns);
+		glVertex3f(-rows*0.5f, 0.0f,  columns*0.5f);
+		glTexCoord2f(1.0*rows, 0.0);
+		glVertex3f( rows*0.5f, 0.0f,  columns*0.5f);
 		glTexCoord2f(0.0, 0.0);
-		glVertex3fv(pyramid[0]);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3fv(pyramid[1]);
-		glTexCoord2f(1.0, 1.0);
-		glVertex3fv(pyramid[4]);
+		glVertex3f( rows*0.5f, 0.0f, -columns*0.5f);
 	glEnd();
-
-	/* Right */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[2]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[1], pyramid[2], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
-		glTexCoord2f(0.0, 0.0);
-		glVertex3fv(pyramid[1]);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3fv(pyramid[2]);
-		glTexCoord2f(1.0, 1.0);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	/* Back */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[3]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[2], pyramid[3], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
-		glTexCoord2f(0.0, 0.0);
-		glVertex3fv(pyramid[2]);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3fv(pyramid[3]);
-		glTexCoord2f(1.0, 1.0);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
-	/* Left */
-	glBegin(GL_POLYGON);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, colors[4]);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specularLight);
-		calculateNormal(pyramid[3], pyramid[0], pyramid[4], normalVector);
-		glNormal3fv(normalVector);
-		glTexCoord2f(0.0, 0.0);
-		glVertex3fv(pyramid[3]);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3fv(pyramid[0]);
-		glTexCoord2f(1.0, 1.0);
-		glVertex3fv(pyramid[4]);
-	glEnd();
-
 	glDisable(GL_TEXTURE_2D);
-	/* Done :) */
+	return 1;	
+}
+
+/*** Load the maze datafile and draw it [ -> will be loaded into the world displaylist ] ***/
+int loadNDrawMaze()
+{
+	int rows, columns, currentRow, block, thisBlock;
+	int status;
+	char filename[255];
+	FILE *in;
+#if MAZEDEBUG_ON
+	int i,j;
+#endif
+
+	filename[0] = '\0';
+	strcat(filename, FILE_MAZE_BASEDIR);
+	strcat(filename, FILE_MAZE);
+	    
+	iprint("[maze] Loading maze from \"%s\" ... \n", filename);
+	if ((in = fopen(filename, "r")) == NULL)
+	{
+		iprint("[maze] Unable to open the file [file: %s]\n", filename);
+		return 0;
+	}
+
+	/* Load stuff */
+	while (!feof(in)) // <- obsolete
+	{
+		status = fscanf(in, " %i %i \n", &rows, &columns);
+		dprint("[maze] Maze has dimensions %i x %i\n", rows, columns);
+
+		glPushMatrix();
+			if (drawBase(rows, columns) < 1)
+			{
+				return 0;
+			}
+		glPopMatrix();
+
+		//createMazeArray(rows, columns);
+
+		if (status == EOF)
+		{
+			return EOF;
+		}
+		if (status < 2)
+		{
+			iprint("ERROR @ loadNDrawMaze :: Reading of dimensions failed!\n");
+			return 0;
+		}
+
+		world_h = rows;
+		world_w = columns;
+		iprint("[maze] world_h:%i world_w:%i\n",world_h, world_w);
+		
+		/* Load vertices and draw the thing */
+		for (currentRow = 0; currentRow < rows; currentRow++)
+		{
+			for (block = 0; block < columns; block++)
+			{
+				fscanf(in, " %i ", &thisBlock);
+				if (thisBlock == 1)
+				{
+					dprint("W");
+					mazeArray[block][currentRow] = 1;
+					glPushMatrix();
+						/*** Transpose the blocks to the right spots ***/
+						glTranslatef(block - (columns*0.5)+0.5, 0.5f, currentRow - (rows*0.5)+0.5);
+						/* Now make it a 1x1 unit [cube is 2x2x2] */
+						glScaled(0.5,0.5,0.5);
+						drawCube(texture_wall);
+					glPopMatrix();
+
+				} else
+				{
+					/* skip -> passage */
+					mazeArray[block][currentRow] = 0;
+					dprint(" ");
+				}
+			}
+			fscanf(in, " \n");
+			dprint("\n");
+		}
+	}
+#if MAZEDEBUG_ON
+	for (i = 0; i < world_h; i++)
+	{
+		for (j = 0; j<world_w; j++)
+		{
+			dprint("[%i][%i]=%i ", i, j, mazeArray[i][j]);
+		}
+		dprint("\n");
+	}
+#endif
+	return 1;
+}
+#if 0
+int createMazeArray(int rows, int cols)
+{
+	static int mazeArray[rows][cols];
 }
 #endif
 
+/*** Draw the player, default is the dino -> not customizable ***/
+int drawPlayer()
+{
+	GLfloat scale = 0.07f;
+	glPushMatrix();
+		/* Translate to behind, because middlepoint is in the tail and we don't want that :) */
+		glTranslatef(-0.75, 0.0, 0.0);
+		glScaled(scale, scale, scale);
+		
+		glPushMatrix();
+			/* Body > */
+			glPushMatrix();
+				glCallList(MODEL_PLAYER_BODY);
+			glPopMatrix();
+			/* Body < */
+			/* Eye > */
+			glPushMatrix();
+				glTranslatef(0.0, 0.0, -0.08f);
+				glCallList(MODEL_PLAYER_EYE);
+			glPopMatrix();
+			/* Eye < */
+			/* Left arm > */
+			glPushMatrix();
+				glTranslatef(0.0, 0.0, -0.75f);
+				glTranslatef( 10.0,  10.0, -1.0);
+				glRotatef(-theta, 0.0, 0.0, 1.0);
+				glTranslatef(-10.0, -10.0,  1.0);
+				glCallList(MODEL_PLAYER_ARM);
+			glPopMatrix();
+			/* Left arm < */
+			/* Right arm > */
+			glPushMatrix();
+				glTranslatef(0.0f, 0.0f, 3.0f);
+				glTranslatef( 10.0,  10.0, -2.0);
+				glRotatef( theta, 0.0, 0.0, 1.0);
+				glTranslatef(-10.0, -10.0,  2.0);
+				glCallList(MODEL_PLAYER_ARM);
+			glPopMatrix();
+			/* Right arm < */
+			/* Right leg > */
+			glPushMatrix();
+				glTranslatef(0.0, 0.0, 2.75f);
+				glTranslatef( 10.0,  5.0, -2.0);
+				glRotatef(-theta, 0.0, 0.0, 1.0);
+				glTranslatef(-10.0, -5.0,  2.0);
+				glCallList(MODEL_PLAYER_LEG);
+			glPopMatrix();
+			/* Right leg < */
+			/* Left leg > */
+			glPushMatrix();
+				glTranslatef(0.0, 0.0, -1.25f);
+				glTranslatef( 10.0,  5.0, -1.0);
+
+				glRotatef( theta, 0.0, 0.0, 1.0);
+				glTranslatef(-10.0, -5.0,  1.0);
+				
+				glCallList(MODEL_PLAYER_LEG);
+			glPopMatrix();
+			/* Left leg < */
+		glPopMatrix();
+	glPopMatrix();
+	return 1;
+}
+
+/*** Render the whole lot ***/
 void renderScene(void)
 {
+	int rotate;
 	/* Get a nice darkblue as background */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
@@ -766,19 +599,13 @@ void renderScene(void)
 	gluLookAt(0.0, zoomlevel, zoomlevel,	// <- eye
 		0.0, 0.0, 0.0,		// <- center
 		0.0, 1.0, 0.0);		// <- up
-#if 0
-	gluLookAt(0.0, 0.0, 20.0,	// <- eye
-		0.0, 0.0, 0.0,		// <- center
-		0.0, 1.0, 0.0);		// <- up
-#endif
-//printf(".");
-#if 1
+
+#ifdef FPS_ON
 	/* FPS stuff > */
 	frame++;
 	time=glutGet(GLUT_ELAPSED_TIME);
 	if (time - timebase > 1000)
 	{
-//printf("1s elapsed\n");
 		sprintf(s,"FPS: %4.2f", frame * 1000.0 / (time-timebase));
 		//sprintf(s,"Time elapsed: %i | FPS:%4.2f", (timebase/1000), frame * 1000.0 / (time-timebase));
 		timebase = time;		
@@ -794,100 +621,36 @@ void renderScene(void)
 	resetPerspectiveProjection();
 	/* FPS stuff < */
 #endif
+
 	glPushMatrix();
+		/* Transpose the whole world to the left/right [done with arrow_left/-right] */
 		glTranslatef(world_leftright, 0.0f, world_forthback);
-#if 0
-	/* Cube tryout > */
-	glPushMatrix();
-		//glRotatef(theta_cube, 0.5, 1, 0);	/* Some nice rotation */
-		//glRotatef(theta_cube, 1, 0, 0);		/* Rotation around x-axis [as stated on website */
+		/* Rotation of the world */
+		glRotatef(world_rotation, 0, 1, 0);
 
-		//glTranslatef(0.0f, 0.0f, 10.0f);
-//		glScaled(2.0,2.0,2.0);
-		drawCube(texture_wall);
+		/* Draw the base and maze > */
+		glPushMatrix();
+			glCallList(MODEL_WORLD);
+		glPopMatrix();
+		/* Draw the base and maze < */
+
+		/* Draw the player > */
+		glPushMatrix();
+			/* Put the player on the right place in the maze */
+			glTranslatef(player_x, 0.0f, player_y);
+			/* Now rotate it to face the direction it's going */
+			if (viewdirection == view_back) rotate = -90;
+			if (viewdirection == view_forth) rotate = 90;
+			if (viewdirection == view_left) rotate = 180;
+			if (viewdirection == view_right) rotate = 0;//-180;
+			glRotatef(rotate, 0, 1, 0);
+			drawPlayer();
+		glPopMatrix();
+		/* Draw the player < */
 	glPopMatrix();
-	/* Cube tryout < */
-#endif
-#if 1
-	/* Draw the base and maze > */
-	glPushMatrix();
-		//glRotatef(theta_pyramid, pyr_x, pyr_y, 0);
-		//glScaled(2.0,2.0,2.0);
-		/* TODO: change viewpoint [or should gluLookAt change?] */
-		glCallList(MODEL_WORLD);
-	glPopMatrix();
-	/* Draw the base and maze < */
-
-	/* Draw the player > */
-	glPushMatrix();
-		/* TODO: change place, because user can control it to walk across the base */
-		//glTranslatef(player_x, player_y, 0.00f);
-		glTranslatef(player_x, 0.5f, player_y);
-		drawPlayer();
-	glPopMatrix();
-	/* Draw the player < */
-#endif
-
-
-
-
-
-	/*** Transpose the whole world to the left/right [done with arrow_left/-right] ***/
-		//glTranslatef(world_leftright, 0.0f, 0.00f);
-		//glTranslatef(world_leftright, 0.0f, 0.00f);
-	glPopMatrix();
-
-
 	
 	/* Finally, show the new frame */
-	glFlush();
 	glutSwapBuffers();
-
-
-#if 0
-	/* Get a nice darkblue as background */
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glLoadIdentity();
-	gluLookAt(0.0, 0.0, 20.0,	// <- eye
-		0.0, 0.0, 0.0,		// <- center
-		0.0, 1.0, 0.0);		// <- up
-	
-	/* Pyramid > */
-	glPushMatrix();
-		//glRotatef(theta_pyramid, 1, 0, 0);
-		glRotatef(theta_pyramid, pyr_x, pyr_y, 0);
-		glScaled(2.0,2.0,2.0);
-		drawPyramid();
-	glPopMatrix();
-	/* Pyramid < */
-
-	glPushMatrix();
-	glRotatef(theta_cube, 0.5, 1, 0);
-		glTranslatef(0.0f, 0.0f, 10.0f);
-		/* Cube > */
-		glPushMatrix();
-			//glRotatef(theta_cube, 0.5, 1, 0);	/* Some nice rotation */
-			glRotatef(theta_cube, 1, 0, 0);		/* Rotation around x-axis [as stated on website */
-			drawCube();
-		glPopMatrix();
-		/* Cube < */
-
-		/* F16 > */
-		glPushMatrix();
-			glRotatef(-theta_f16, 0.0, 1.0, 0.0);
-			glTranslatef(0.0f, 0.0f, 5.0f);
-			glRotatef(-90, 0.0, 1.0, 0.0);
-			glScaled(2.0,2.0,2.0);
-			//drawCube();
-			glCallList(F16_MODEL);
-		glPopMatrix();
-		/* F16 < */
-	glPopMatrix();
-
-	glFlush();
-	glutSwapBuffers();
-#endif
 }
 
 void reshape_now(GLsizei w, GLsizei h)
@@ -903,7 +666,6 @@ void reshape_now(GLsizei w, GLsizei h)
 	fflush(stdout);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	//glFrustum(-0.3, 0.3, -whRatio * 0.3, whRatio * 0.3, 0.3, 100);
 	glFrustum(-0.3, 0.3, -whRatio * 0.3, whRatio * 0.3, 0.3, 100);
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -922,14 +684,19 @@ int loadModel(char *filename, int texture)
 	dprint("loadModel called\n");
 
 	/* Texture stuff */
-	if (texture > -1) glEnable(GL_TEXTURE_2D);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
-	glBindTexture(GL_TEXTURE_2D, texture);
+	if (texture > -1)
+	{
+		glEnable(GL_TEXTURE_2D);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, textureMode);	// target, pname, param
+		glBindTexture(GL_TEXTURE_2D, texture);
 
-	iprint("Loading \"%s\" ... \n", filename);
+		glEnable(GL_TEXTURE_GEN_S); glEnable(GL_TEXTURE_GEN_T);
+	}
+	
+	iprint("[loadModel] Loading \"%s\" ... \n", filename);
 	if ((in = fopen(filename, "r")) == NULL)
 	{
-		iprint("Unable to open the file [file: %s]\n", filename);
+		iprint("[loadModel] Unable to open the file [file: %s]\n", filename);
 		return 0;
 	}
 	/* Load stuff */
@@ -994,13 +761,30 @@ int loadModel(char *filename, int texture)
 			fscanf(in, " %f %f %f %f %f %f\n", &vertex_x, &vertex_y, &vertex_z, &normal_x, &normal_y, &normal_z);
 			glNormal3f(normal_x, normal_y, normal_z);
 			glVertex3f(vertex_x, vertex_y, vertex_z);
-			glTexCoord2f(1.0, 0.0); //random placement of textures
+			//glTexCoord2f(1.0, 0.0); //random placement of textures
 		}
 		glEnd();	/* Done with this figure */
 	}
-	glDisable(GL_TEXTURE_2D);
-	iprint("done\n");
+	if (texture > -1)
+	{
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+	}
+	iprint("[loadModel] done\n");
 	return 1;
+}
+
+void textureGen( GLfloat i )
+{
+	GLfloat s[4] = { i, 0, i, 0 }; 
+	GLfloat t[4] = { i, i, 0, 0 }; 
+
+	glTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+	glTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+
+	glTexGenfv(GL_S, GL_OBJECT_PLANE, s);
+	glTexGenfv(GL_T, GL_OBJECT_PLANE, t);
 }
 
 int loadTexture(char *filename, int texId, RGBImage *pTex)
@@ -1030,14 +814,11 @@ int loadTextures()
 	strcat(filename, TEXTURES_BASEDIR);
 	strcat(filename, TEXT_REPTILE);
 	loadTexture(filename, texture_reptile, pTexture_reptile);
-dprint("pTexture_reptile: %x\n", pTexture_reptile);
 
 	filename[0] = '\0';
 	strcat(filename, TEXTURES_BASEDIR);
 	strcat(filename, TEXT_GROUND);
 	loadTexture(filename, texture_ground, pTexture_ground);
-dprint("pTexture_ground: %x\n", &pTexture_ground);
-
 
 	filename[0] = '\0';
 	strcat(filename, TEXTURES_BASEDIR);
@@ -1047,32 +828,48 @@ dprint("pTexture_ground: %x\n", &pTexture_ground);
 	return 1;
 }
 
-/*** Actual load functions ***/
+////////// Actual load functions >
+/*** Load the player [dino] ***/
 int loadPlayer(void)
 {
-	int i;
 	char filename[255];
-return 1;
-	/* Load the player [dino] */
-#if 0
-	for (i = 0; i < PLAYER_NR_FILES; i++)
-	{
-		filename[0]='\0';	//reset the string
-		strcat(filename, FILE_PLAYER_BASEDIR);
-		strcat(filename, player_files[i]);
-		loadModel(filename, texture_reptile);
-	}
-#endif
+
 	filename[0]='\0';	//reset the string
 	strcat(filename, FILE_PLAYER_BASEDIR);
 	strcat(filename, player_files[player_arm]);
-	loadModel(filename, texture_reptile);
+	glNewList(MODEL_PLAYER_ARM, GL_COMPILE);
+		loadModel(filename, texture_reptile);
+	glEndList();
+
+	filename[0]='\0';	//reset the string
+	strcat(filename, FILE_PLAYER_BASEDIR);
+	strcat(filename, player_files[player_leg]);
+	glNewList(MODEL_PLAYER_LEG, GL_COMPILE);
+		loadModel(filename, texture_reptile);
+	glEndList();
+
+	filename[0]='\0';	//reset the string
+	strcat(filename, FILE_PLAYER_BASEDIR);
+	strcat(filename, player_files[player_body]);
+	glNewList(MODEL_PLAYER_BODY, GL_COMPILE);
+		loadModel(filename, texture_reptile);
+	glEndList();
+
+	filename[0]='\0';	//reset the string
+	strcat(filename, FILE_PLAYER_BASEDIR);
+	strcat(filename, player_files[player_eye]);
+	glNewList(MODEL_PLAYER_EYE, GL_COMPILE);
+		loadModel(filename, -1);
+	glEndList();
+
 	return 1;
 }
 
+/*** Draw base and load maze, and put them into a displaylist ***/
 int loadWorld(void)
 {
 	glNewList(MODEL_WORLD, GL_COMPILE);
+		/* loadNDrawMaze draws the base too */
 		if (loadNDrawMaze() < 1)
 		{
 			glEndList();
@@ -1081,6 +878,7 @@ int loadWorld(void)
 	glEndList();
 	return 1;
 }
+////////// Actual load functions <
 ////////////////////////////////////// Loading stuff <
 
 ////////////////////////////////////// Handlers >
@@ -1100,11 +898,10 @@ void keyboard(unsigned char key, int x, int y)
 		} else
 		{
 			animate = 1;
-//			glutTimerFunc(20, rotateCube, 0);
-//			glutTimerFunc(10, rotatePlayer, 0);
+			glutTimerFunc(30, rotateFunction, 0);
 		}
 	}
-	if ( key == '+' && zoomlevel > 0.5 )
+	if ( (key == '+' || key == '=') && zoomlevel > 0.5 )
 	{
 		//iprint("Adjusting zoomlevel: zoom in to %f\n", zoomlevel);
 		zoomlevel -= 0.5;
@@ -1124,70 +921,99 @@ void keyboard(unsigned char key, int x, int y)
 		world_leftright -= 0.5;
 		//iprint("world_leftright = %f\n", world_leftright);
 	}
+	if ( key == ';' || key == ':' )
+	{
+		world_rotation -= 2.0;
+		if (world_rotation < 0) world_rotation += 360;
+		//iprint("world_rotation = %f\n", world_rotation);
+	}
+	if ( key == '\'' || key == '"')
+	{
+		world_rotation += 2.0;
+		if (world_rotation > 360) world_rotation -= 360;
+		//iprint("world_rotation = %f\n", world_rotation);
+	}
 }
 
+////////// Helper functions for player-walking >
+/*** Translates coords of player into units of the world [to check for walls] ***/
 int getIndex(GLfloat pl_coord, GLfloat distance)
 {
-	/* not yet in use */
 	return  (int)(pl_coord + distance + (world_w*0.5));
 }
+
+/*** Returns 1 if in maze and x,y is not a wall, otherwise zero ***/
+int isValidLocation(int x, int y)
+{
+	if (x >= 0 && x < world_w && y >= 0 && y < world_h)
+	{
+		if (mazeArray[x][y] == 0) return 1;
+		/* Or, with ghostmode on, we can walk through walls :) */
+		if (cheating) return 1;
+	}
+	return 0;
+}
+////////// Helper functions for player-walking <
 
 static void specialKeyFunc( int Key, int x, int y )
 {
 	int pl_x, pl_y, new;
-	pl_x = (int)(player_x + (world_h*0.5));
-	pl_y = (int)(player_y + (world_w*0.5));
-	iprint("x:%i y:%i\n",pl_x , pl_y);
+	pl_x = getIndex(player_x, 0.0);
+	pl_y = getIndex(player_y, 0.0);
+	//iprint("x:%i y:%i\n",pl_x , pl_y);
 	switch ( Key )
 	{
 		case GLUT_KEY_UP:
 			/* Move player forwards */
-			new = (int)(player_y - 0.2 + (world_w*0.5));
-			if (mazeArray[pl_x][new] == 0)
+			viewdirection = view_forth;
+			new = getIndex(player_y, -0.2f);
+			if (isValidLocation(pl_x, new))
 			{
-				player_y -= 0.2;
+				player_y -= 0.2f;
 			}
-			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_DOWN:
-			//Key_down();
 			/* Move player backwards */
-			new = (int)(player_y + 0.2 + (world_w*0.5));
-			if (mazeArray[pl_x][new] == 0)
+			viewdirection = view_back;
+			new = getIndex(player_y, 0.2f);
+			if (isValidLocation(pl_x,new))
 			{
-				player_y += 0.2;
+				player_y += 0.2f;
 			}
-			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_LEFT:
 			/* Move player to the left */
-			new = (int)(player_x - 0.2 + (world_h*0.5));
-			if (mazeArray[new][pl_y] == 0)
+			viewdirection = view_left;
+			new = getIndex(player_x, -0.2f);
+			if (isValidLocation(new,pl_y))
 			{
-				player_x -= 0.2;
+				player_x -= 0.2f;
 			}
-			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_RIGHT:
 			/* Move player to the right */
-			new = (int)(player_x + 0.2 + (world_h*0.5));
-			if (mazeArray[new][pl_y] == 0)
+			viewdirection = view_right;
+			new = getIndex(player_x, 0.2f);
+			if (isValidLocation(new,pl_y))
 			{
-				player_x += 0.2;
+				player_x += 0.2f;
 			}
-			//iprint("player x/y: %f/%f\n", player_x, player_y);
 			break;
 		case GLUT_KEY_PAGE_UP:
-			world_forthback += 0.5;
+			/* Move world towards viewer */
+			world_forthback += 0.5f;
 			break;
 		case GLUT_KEY_PAGE_DOWN:
-			world_forthback -= 0.5;
+			/* Move world away from viewer */
+			world_forthback -= 0.5f;
 			break;
 	}
 }
 
 void mouse(int btn, int btn_state, int x, int y)
 {
+#if 0
+//nothing usefull left here
 	/* Print the states of the mouse buttons */
 	if ( btn == GLUT_LEFT_BUTTON && btn_state == GLUT_DOWN )
 	{
@@ -1206,6 +1032,7 @@ void mouse(int btn, int btn_state, int x, int y)
 	{
 		printf(" :: right button down\n");
 	}
+#endif
 }
 
 void handle_menu(int whichone)
@@ -1213,15 +1040,6 @@ void handle_menu(int whichone)
 	/* Handle the selected item */
 	switch (whichone)
 	{
-		case MNU_BOGUS_1: /* item 1 */
-			iprint("menu :: entry 1\n");
-			break;
-		case MNU_BOGUS_2: /* item 2 */
-			iprint("menu :: entry 2\n");
-			break;
-		case MNU_BOGUS_3: /* item 3 */
-			iprint("menu :: entry 3\n");
-			break;
 		case MNU_FLAT:
 			iprint("doing flat shading\n");
 			glShadeModel(GL_FLAT);
@@ -1230,63 +1048,29 @@ void handle_menu(int whichone)
 			iprint("doing smooth shading\n");
 			glShadeModel(GL_SMOOTH);
 			break;
-#if 0
-		case MNU_VER:
-			iprint("doing vertical rotation of pyramid\n");
-			pyr_x = 1;
-			pyr_y = 0;
+		case MNU_CHEATON:
+			iprint("set cheating ON\n");
+			cheating = 1;
 			break;
-		case MNU_HOR:
-			iprint("doing horizontal rotation of pyramid\n");
-			pyr_x = 0;
-			pyr_y = 1;
-			break;
-		case MNU_TEX_FULL:
-			iprint("using full texture\n");
-			texRowX = 1.0;
-			texRowY = 1.0;
-			rowDivide = 0.0;
-			break;
-		case MNU_TEX_COMP:
-			iprint("using half texture [only \"computer\"]\n");
-			texRowX = 1.0;
-			texRowY = 1.0;
-			rowDivide = 0.5;
-			break;
-		case MNU_TEX_GRID:
-			iprint("using texture grid [4x2]\n");
-			texRowX = 4.0;
-			texRowY = 2.0;
-			rowDivide = 0.0;
-			break;
-#endif
-		case MNU_TEXMODE_MOD:
-			iprint("using texture mode modulate\n");
-			texturesEnabled = 1;
-			textureMode = GL_MODULATE;
-			break;
-		case MNU_TEXMODE_REP:
-			iprint("using texture mode replace\n");
-			texturesEnabled = 1;
-			textureMode = GL_REPLACE;
-			break;
-		case MNU_TEXMODE_OFF:
-			iprint("using no textures\n");
-			texturesEnabled = 0;
+		case MNU_CHEATOFF:
+			iprint("set cheating OFF\n");
+			cheating = 0;
 			break;
 		case MNU_QUIT:
 			iprint("menu :: quit entry chosen, exiting\n");
 			exit(0);
 			break;
 	}
-	
 }
 ////////////////////////////////////// Handlers <
 
 ////////////////////////////////////// main function and init >
 int main(int argc, char **argv)
 {
-	int i, submenu_shading, submenu_rotation, submenu_textures, submenu_texmode;
+	int submenu_shading, submenu_cheating;
+#ifdef FOG_ON
+	GLfloat color[4] = {0.70f, 0.70f, 0.70f, 1.00};
+#endif
 
 	/* If prog was called with param, only print info to console */
 	if (argc > 1)
@@ -1302,7 +1086,6 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-
 	/*** Initialize glut and the window ***/
 	glutInit(&argc, argv);
 	/* Use rgb, double buffering and hidden surface removal */
@@ -1312,16 +1095,18 @@ int main(int argc, char **argv)
 	glutCreateWindow("Project aMaze [ Michiel Scholten | mbscholt@cs.vu.nl | 1204467 ]");
 
 	/* Background color of the screen - "the sky" */
-	//glClearColor(0.0, 0.0, 0.5, 1.0);
-	glClearColor(0.0f, 0.5f, 0.9f, 1.0f);
+#ifdef FOG_ON
+	glClearColor(0.7f, 0.7f, 0.7f, 1.0);
+#endif
+#ifndef FOG_ON
+	//glClearColor(0.0f, 0.0f, 0.5f, 1.0f);	//darkblue
+	glClearColor(0.0f, 0.5f, 0.9f, 1.0f);	//lighter blue
+#endif
 
 	glEnable(GL_DEPTH_TEST);
 	glShadeModel(GL_SMOOTH);
 	//glEnable(GL_CULL_FACE);
 
-	/* Enable special keys like GLUT_KEY_LEFT */
-	//glutSpecialFunc(specialkeys);
-	
 	//glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, GL_LIGHT_MODEL_AMBIENT);
 	
 	/* Light related settings */
@@ -1349,6 +1134,7 @@ int main(int argc, char **argv)
 	glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
 	glutIdleFunc(renderScene);
+	/* Enable special keys like GLUT_KEY_LEFT */
 	glutSpecialFunc(specialKeyFunc);
 
 	/* Load the texture[s] */
@@ -1359,41 +1145,30 @@ int main(int argc, char **argv)
 	glutAddMenuEntry("flat",MNU_FLAT);
 	glutAddMenuEntry("smooth",MNU_SMOOTH);
 
-	submenu_rotation = glutCreateMenu(handle_menu);
-	glutAddMenuEntry("vertical",MNU_VER);
-	glutAddMenuEntry("horizontal",MNU_HOR);
-
-	submenu_textures = glutCreateMenu(handle_menu);
-	glutAddMenuEntry("full texture",MNU_TEX_FULL);
-	glutAddMenuEntry("computer",MNU_TEX_COMP);
-	glutAddMenuEntry("grid",MNU_TEX_GRID);
-
-	submenu_texmode = glutCreateMenu(handle_menu);
-	glutAddMenuEntry("modulate",MNU_TEXMODE_MOD);
-	glutAddMenuEntry("replace",MNU_TEXMODE_REP);
-	glutAddMenuEntry("off",MNU_TEXMODE_OFF);
+	submenu_cheating = glutCreateMenu(handle_menu);
+	glutAddMenuEntry("on",MNU_CHEATON);
+	glutAddMenuEntry("off",MNU_CHEATOFF);
 
 	glutCreateMenu(handle_menu);
-	glutAddMenuEntry("menuentry 1", MNU_BOGUS_1);
-	glutAddMenuEntry("menuentry 2", MNU_BOGUS_2);
-	glutAddMenuEntry("menuentry 3", MNU_BOGUS_3);
-	glutAddMenuEntry("-----------------------", MNU_NONE);
 	glutAddSubMenu("shading", submenu_shading);
-	//glutAddSubMenu("rotationtype", submenu_rotation);
-	glutAddSubMenu("textures", submenu_textures);
-	glutAddSubMenu("texture mode", submenu_texmode);
+	glutAddSubMenu("ghostmode", submenu_cheating);
 	glutAddMenuEntry("-----------------------", MNU_NONE);
 	glutAddMenuEntry("quit [q, esc]", MNU_QUIT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 	/*** menu < ***/
 
+	/* Enable textureGen for normal-looking textures on the dino model :) */
+//	textureGen( 1 );
+
 #ifdef FOG_ON
-	GLfloat color[4] = {0.70, 0.70, 0.70, 1.00};
+	//GLfloat color[4] = {0.70, 0.70, 0.70, 1.00};
 	glEnable(GL_FOG);
 	glFogfv(GL_FOG_COLOR, color);
 	glFogf(GL_FOG_START, 10.50);
 	glFogf(GL_FOG_END, 20.00);
-	glFogi(GL_FOG_MODE, GL_LINEAR);
+	glFogf(GL_FOG_DENSITY, 0.05f);
+	//glFogi(GL_FOG_MODE, GL_LINEAR);
+	glFogi(GL_FOG_MODE, GL_EXP);
 #endif	
 	/* Load the various parts of the game */
 	if (loadWorld() < 1)
@@ -1417,6 +1192,7 @@ int main(int argc, char **argv)
 	}
 	
 	/* now loop */
+	glutTimerFunc(30, rotateFunction, 0);	//movements of dino's limbs
 	glutMainLoop();
 
 	return 0;
