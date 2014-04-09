@@ -11,7 +11,7 @@
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-13
+ * Version 2003-11-14
  * Michiel Scholten [ mbscholt@cs.vu.nl ]
  */
 
@@ -19,9 +19,29 @@ double time;
 double theta;
 
 /* Define vertex */
-typedef GLfloat point3f[3];
+typedef GLfloat point3[3];
 
-point3 pyramid[] = {{0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {
+/*
+ * 1: {{0.0, 1.0, 0.0}, {-1.0, 0.0,  1.0}, { 1.0, 0.0,  1.0}}
+ * 2: {{0.0, 1.0, 0.0}, { 1.0, 0.0,  1.0}, { 1.0, 0.0, -1.0}}
+ * 3: {{0.0, 1.0, 0.0}, { 1.0, 0.0, -1.0}, {-1.0, 0.0, -1.0}}
+ * 4: {{0.0, 1.0, 0.0}, {-1.0, 0.0, -1.0}, {-1.0, 0.0,  1.0}}
+ *
+ * base: {{-1.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 0.0, -1.0}, {-1.0, 0.0, -1.0}}
+ *
+ */
+
+/*point3 pyramid[] = {{0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {*/
+point3 pyr_tr1[] = {{0.0, 1.0, 0.0}, {-1.0, 0.0,  1.0}, { 1.0, 0.0,  1.0}};
+point3 pyr_tr2[] = {{0.0, 1.0, 0.0}, { 1.0, 0.0,  1.0}, { 1.0, 0.0, -1.0}};
+point3 pyr_tr3[] = {{0.0, 1.0, 0.0}, { 1.0, 0.0, -1.0}, {-1.0, 0.0, -1.0}};
+point3 pyr_tr4[] = {{0.0, 1.0, 0.0}, {-1.0, 0.0, -1.0}, {-1.0, 0.0,  1.0}};
+/*base ???*/
+
+point3 cube[8] = {{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
+	{1.0, 1.0, -1.0}, {-1.0,1.0,-1.0}, {-1.0, -1.0, 1.0},
+	{1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}};
+point3 cubecolors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 0.0, 0.0}, {0.0, 50.0, 0.0}, {0.0, 0.0, 50.0}};
 
 void idle(void)
 {
@@ -122,13 +142,15 @@ void drawPyramid()
 	glColor3ub( 0.0, 175.0, 0.0);
 	glPopMatrix();
 	/* Draw the square base */
+	drawSquare(base, color);
+	/*
 	glBegin(GL_POLYGON);
 		glVertex3i(-5, -5);
 		glVertex3i(-5,  5);
 		glVertex3i( 5,  5);
 		glVertex3i( 5, -5);
 	glEnd();
-	
+	*/
 	glColor3ub( 175.0, 0.0, 0.0 );
 	/* now draw it */
 	glPopMatrix();
@@ -141,17 +163,34 @@ void drawPyramid()
 	glPushMatrix();
 }
 
-void drawSquare( point3 coords, glColor3ub colors )
+void drawCube()
 {
-	/* we want a red square, so pick a nice red */
-	glColor3ub( 175.0, 0.0, 0.0 );
-	/* now draw it */
+	point3 vertices[4];
+	vertices[0] = cube[0];
+	vertices[1] = cube[3];
+	vertices[2] = cube[2];
+	vertices[3] = cube[1];
+	point3 color = cubecolors[0]; 
+	drawSquare(cube, color);
+}
+
+void drawSquare( point3 vertices[], glColor3ub colors )
+{
+	/* set the color of the square */
+	glColor3ub( colors );
+	/* now draw the square */
 	glPopMatrix();
 	glBegin(GL_POLYGON);
+	/*
 		glVertex2i(-5, -5);
 		glVertex2i(-5,  5);
 		glVertex2i( 5,  5);
 		glVertex2i( 5, -5);
+	*/
+		glVertex3fv(vertices[0]);
+		glVertex3fv(vertices[1]);
+		glVertex3fv(vertices[2]);
+		glVertex3fv(vertices[3]);
 	glEnd();
 	glPushMatrix();
 }
