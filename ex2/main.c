@@ -1,7 +1,9 @@
 #include <GL/glut.h>
 #include <stdio.h>
 
+#include <util/readtex.h>
 #if 0
+#include "../util/readtex.h"
 #include </home/mbscholt/mydocs/vu/20032004/cg/exercises/util/glutil.h>
 #include </home/mbscholt/xc_home/mydocs/vu/20032004/cg/exercises/util/glutil.h>
 #include "util/glutil.h"
@@ -11,7 +13,7 @@
  * Computer Graphics - Exercise 2
  * Solar System
  *
- * Version 2003-11-25
+ * Version 2003-11-26
  * Michiel Scholten [ mbscholt@cs.vu.nl | 1204467 ]
  */
 
@@ -20,6 +22,11 @@
 #define MNU_QUIT 4
 #define MNU_SMOOTH 5
 #define MNU_FLAT 6
+#define MNU_VER 7
+#define MNU_HOR 8
+#define MNU_TEX_FULL 9
+#define MNU_TEX_COMP 10
+#define MNU_TEX_GRID 11
 
 #define DEBUG
 #define INFO
@@ -42,18 +49,79 @@ double time;
 int mousedown = 0;
 double theta_pyramid, theta_cube, theta_f16;
 int animate = 0;
+int pyr_x = 1;
+int pyr_y = 0;
+
+RGBImage *texture;
 
 /* Define vertex */
 typedef GLfloat point3[3];
 
-point3 pyramid[5] = {{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.0,-1.0,-1.0},	/* base */
-	{0.0, 1.0, 0.0}};									/* top */
+/* Struct to define material properties */
+typedef struct
+{
+	float ambient[4];	/* params parameter in glMaterialfv call */
+	float diffuse[4];
+	float specular[4];
+	float shininess;	/* Must be in range [0,128] */
+} Material_t;
 
-point3 cube[8] = {{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
+
+////////////////////////////////////// Pyramid settings >
+point3 pyramid[5] =
+{
+	{-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0,-1.0, -1.0}, {-1.0,-1.0,-1.0},	/* base */
+	{0.0, 1.0, 0.0}									/* top */
+};
+
+Material_t pyramidMaterial =
+{
+	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialAmbient */
+	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialDiffuse */
+	{0.6f, 0.6f, 0.6f, 1.0f},	/* materialSpecular */
+	0				/* shininess */
+};
+////////////////////////////////////// Pyramid settings <
+
+////////////////////////////////////// Cube settings >
+point3 cube[8] =
+{
+	{-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0},
 	{1.0, 1.0, -1.0}, {-1.0,1.0,-1.0}, {-1.0, -1.0, 1.0},
-	{1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}};
+	{1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}
+};
 
-point3 colors[6] = {{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 50.0, 0.0}, {0.0, 50.0, 50.0}, {50.0, 0.0, 50.0}};
+Material_t cubeMaterial =
+{
+	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialAmbient */
+	{0.0f, 0.0f, 0.0f, 1.0f},	/* materialDiffuse */ 
+	{0.3f, 0.3f, 0.3f, 1.0f},	/* materialSpecular */
+	0				/* shininess */
+}; 
+////////////////////////////////////// Cube settings <
+
+
+point3 colors[6] =
+{
+	{175.0, 0.0, 0.0}, {0.0, 175.0, 0.0}, {0.0, 0.0, 175.0}, {50.0, 50.0, 0.0}, {0.0, 50.0, 50.0}, {50.0, 0.0, 50.0}
+};
+
+////////////////////////////////////// Lights >
+const float LIGHT0_POS[] =  {-1.5f, 5.0f, -15.0f, 1.0f};
+const float LIGHT0_AMBIENT[] = {0.2f, 0.2f, 0.2f, 1.0f};
+const float LIGHT0_DIFFUSE[] = {0.2f, 0.2f, 0.2f, 1.0f};  
+const float LIGHT0_SPECULAR[] = {0.6f, 0.6f, 0.6f, 1.0f};
+
+const float LIGHT1_POS[] =  {4.0f, -1.5f, -10.0f, 1.0f};
+const float LIGHT1_AMBIENT[] =  {0.6, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_DIFFUSE[] =  {0.6f, 0.6f, 0.6f, 1.0f};
+const float LIGHT1_SPECULAR[] =  {0.8f, 0.4f, 0.4f, 1.0f};
+////////////////////////////////////// Lights <
+
+#if 0
+/* Clear color */
+const GLfloat CLEAR_COLOR[4] = {0.5f, 0.85f, 1.0f, 1.0f};
+#endif
 
 void idle(void)
 {
@@ -61,6 +129,13 @@ void idle(void)
 //	glutPostRedisplay();
 }
 
+void setMaterial(Material_t *material, GLenum mode)
+{
+	glMaterialfv(mode, GL_AMBIENT, material->ambient);
+	glMaterialfv(mode, GL_DIFFUSE, material->diffuse);
+	glMaterialfv(mode, GL_SPECULAR, material->specular);
+	glMaterialf(mode, GL_SHININESS, material->shininess);
+}
 
 ////////////////////////////////////// Rotating functions >
 void rotatePyramid(int value)
@@ -116,13 +191,20 @@ void rotateF16(int value)
 void drawPyramid()
 {
 	/* We want a pyramid with a square base, every side a different colour */
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	glEnable(GL_COLOR_MATERIAL);
+	setMaterial(&pyramidMaterial, GL_FRONT_AND_BACK);
 
 	/* Draw the square base */
 	glBegin(GL_POLYGON);
 		glColor3fv(colors[0]);
+		glTexCoord2f(0.0, 0.0);
 		glVertex3fv(pyramid[0]);
+		glTexCoord2f(1.0, 0.0);
 		glVertex3fv(pyramid[1]);
+		glTexCoord2f(1.0, 1.0);
 		glVertex3fv(pyramid[2]);
+		glTexCoord2f(0.0, 1.0);
 		glVertex3fv(pyramid[3]);
 	glEnd();
 
@@ -154,18 +236,24 @@ void drawPyramid()
 		glVertex3fv(pyramid[0]);
 		glVertex3fv(pyramid[4]);
 	glEnd();
+	glDisable(GL_COLOR_MATERIAL);
 
 	/* Done :) */
 }
 
 int drawCube()
 {
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	glEnable(GL_COLOR_MATERIAL);
+	setMaterial(&cubeMaterial, GL_FRONT_AND_BACK);
+
 	glBegin(GL_POLYGON);
 		glColor3fv(colors[0]);
 		glVertex3fv(cube[4]);
 		glVertex3fv(cube[5]);
 		glVertex3fv(cube[1]);
 		glVertex3fv(cube[0]);
+		glNormal3f(0.5,0.5,0.5);
 	glEnd();
 
 	glBegin(GL_POLYGON);
@@ -207,6 +295,7 @@ int drawCube()
 		glVertex3fv(cube[3]);
 		glVertex3fv(cube[7]);
 	glEnd();
+	glDisable(GL_COLOR_MATERIAL);
 }
 
 #if 0
@@ -275,7 +364,8 @@ void display(void)
 	
 	/* Pyramid > */
 	glPushMatrix();
-		glRotatef(theta_pyramid, 1, 0, 0);
+		//glRotatef(theta_pyramid, 1, 0, 0);
+		glRotatef(theta_pyramid, pyr_x, pyr_y, 0);
 		glScaled(2.0,2.0,2.0);
 		drawPyramid();
 	glPopMatrix();
@@ -369,6 +459,8 @@ int loadModel(char *filename)
 			return 0;
 		}
 
+		glEnable(GL_COLOR_MATERIAL);
+
 		/* 
 		 * Look which kind of figure we have to draw and start the figure
 		 * Choose from POINTS, LINES, LINE_STRIP, LINE_LOOP, TRIANGLES, QUADS, TRIANGLE_STRIP, TRIANGLE_FAN, QUAD_STRIP or POLYGON
@@ -407,6 +499,7 @@ int loadModel(char *filename)
 		{
 			/* Return an error, or at least a -1 */
 			iprint("ERROR @ loadModel :: unknown identifier!\n");
+			glDisable(GL_COLOR_MATERIAL);	/* Just to be sure */
 			return -1;
 		}
 		/* Load vertices and draw the thing */
@@ -418,9 +511,17 @@ int loadModel(char *filename)
 			glVertex3f(vertex_x, vertex_y, vertex_z);
 		}
 		glEnd();	/* Done with this figure */
+		glDisable(GL_COLOR_MATERIAL);
 	}
 	iprint("done\n");
 	return 1;
+}
+
+int loadTextures()
+{
+//	LoadRGB("../textures/text.rgb");
+	texture = LoadRGB("../textures/text.rgb");	
+	iprint("Texture \"../textures/text.rgb\" loaded\n");
 }
 ////////////////////////////////////// Loading stuff <
 
@@ -428,10 +529,11 @@ int loadModel(char *filename)
 void keyboard(unsigned char key, int x, int y)
 {
 	/* When q, Q or ESC is pressed, exit the program */
-	if ( key == 'q' || key == 'Q' || key == 27)
+	if ( key == 'q' || key == 'Q' || key == 27 )
 	{
 		exit(0);
 	}
+	/* Space bar is used for starting and stopping the animation */
 	if ( key == ' ' )
 	{
 		if ( animate )
@@ -489,6 +591,28 @@ void handle_menu(int whichone)
 			dprint("doing smooth shading\n");
 			glShadeModel(GL_SMOOTH);
 			break;
+		case MNU_VER:
+			dprint("doing vertical rotation of pyramid\n");
+			pyr_x = 1;
+			pyr_y = 0;
+			break;
+		case MNU_HOR:
+			dprint("doing horizontal rotation of pyramid\n");
+			pyr_x = 0;
+			pyr_y = 1;
+			break;
+		case MNU_TEX_FULL:
+			dprint("using full texture\n");
+			/**/
+			break;
+		case MNU_TEX_COMP:
+			dprint("using half texture [only \"computer\"]\n");
+			/**/
+			break;
+		case MNU_TEX_GRID:
+			dprint("using texture grid [4x2]\n");
+			/**/
+			break;
 		case MNU_QUIT:
 			printf("menu :: quit entry chosen, exiting\n");
 			exit(0);
@@ -498,11 +622,12 @@ void handle_menu(int whichone)
 }
 ////////////////////////////////////// Handlers <
 
+////////////////////////////////////// main function and init >
 int main(int argc, char **argv)
 {
 	char f16_files[8][40]= {"../models/f-16/afterburner.sgf", "../models/f-16/body.sgf", "../models/f-16/bomb.sgf", "../models/f-16/cockpit.sgf",
 		"../models/f-16/rockets.sgf", "../models/f-16/tailfin.sgf", "../models/f-16/tailwings.sgf", "../models/f-16/wings.sgf"};
-	int i, submenu;
+	int i, submenu_shading, submenu_rotation, submenu_textures;
 			
 	/* initialize glut and the window */
 	glutInit(&argc, argv);
@@ -519,7 +644,8 @@ int main(int argc, char **argv)
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_LIGHT1);
+	//glEnable(GL_COLOR_MATERIAL);
 	glShadeModel(GL_SMOOTH);
 	
 	/* set various event callback functions */
@@ -529,17 +655,31 @@ int main(int argc, char **argv)
 	glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
 
+	/* Load the texture[s] */
+	loadTextures();
+	
 	/* create menu */
-	submenu = glutCreateMenu(handle_menu);
+	submenu_shading = glutCreateMenu(handle_menu);
 	glutAddMenuEntry("flat",MNU_FLAT);
 	glutAddMenuEntry("smooth",MNU_SMOOTH);
-	
+
+	submenu_rotation = glutCreateMenu(handle_menu);
+	glutAddMenuEntry("vertical",MNU_VER);
+	glutAddMenuEntry("horizontal",MNU_HOR);
+
+	submenu_textures = glutCreateMenu(handle_menu);
+	glutAddMenuEntry("full texture",MNU_TEX_FULL);
+	glutAddMenuEntry("computer",MNU_TEX_COMP);
+	glutAddMenuEntry("grid",MNU_TEX_GRID);
+
 	glutCreateMenu(handle_menu);
-	glutAddMenuEntry("entry 1", 1);
-	glutAddMenuEntry("entry 2", 2);
-	glutAddMenuEntry("entry 3", 3);
+	glutAddMenuEntry("menuentry 1", 1);
+	glutAddMenuEntry("menuentry 2", 2);
+	glutAddMenuEntry("menuentry 3", 3);
 //	glutAddMenuEntry("-", 0);
-	glutAddSubMenu("shading",submenu);
+	glutAddSubMenu("shading",submenu_shading);
+	glutAddSubMenu("rotationtype",submenu_rotation);
+	glutAddSubMenu("textures",submenu_textures);
 //	glutAddMenuEntry("-", 0);
 	glutAddMenuEntry("quit [q, esc]", MNU_QUIT);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
@@ -548,7 +688,9 @@ int main(int argc, char **argv)
 	glNewList(F16_MODEL, GL_COMPILE);
 	for (i = 0; i < 8; i++)
 	{
+		/* Default color [some shade of gray */
 		glColor3f(.75, .5, .5);
+		/* Use some custom colors for various parts */
 		if (strcmp("../models/f-16/cockpit.sgf", f16_files[i]) == 0) glColor3f(.0, .0, .7);
 		if (strcmp("../models/f-16/rockets.sgf", f16_files[i]) == 0) glColor3f(1.0, .0, .0);
 		if (strcmp("../models/f-16/bomb.sgf", f16_files[i]) == 0) glColor3f(.0, 1.0, .0);
@@ -565,4 +707,5 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+////////////////////////////////////// main function and init <
 
