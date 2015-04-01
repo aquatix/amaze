@@ -5,6 +5,12 @@ Little C/OpenGL project from the dark ages, featuring a little dinosaur, mazes a
 
 The meat of the project can be found in the `project` directory but it needs some libraries from the other directories (also models, textures etc). The directory tree is a bit haphazard, but the whole project has been put together in a few days back in 2004.
 
+## Dependencies
+
+libglu1-mesa-dev freeglut3 freeglut3-dev
+
+(so, on a Debian based distro, run `apt-get install libglu1-mesa-dev freeglut3 freeglut3-dev`)
+
 ## Screenshots
 
 Big maze:
